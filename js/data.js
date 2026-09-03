@@ -438,5 +438,129 @@ Here is your real-time inventory classification breakdown:
       { id: 'm-2', donor: 'Smart Home #104 (You)', item: 'Excess Water Hose Nozzle (Brass)', dist: 'Your Post', status: 'Posted' },
       { id: 'm-3', donor: 'Alex (#204)', item: 'Unused Water Filter Cartridge (RO)', dist: '0.3 miles', status: 'Available' }
     ]
-  }
+  },
+
+  // 🚀 Hackathon Demo Mode Steps (9-Step AI Telemetry Simulation Scenario)
+  hackathonDemoSteps: [
+    {
+      step: 1,
+      title: "Step 1: Baseline Normal Household Telemetry",
+      subtitle: "Monitoring initial baseline IoT telemetry parameters across Water, Electricity, LPG, and Inventory.",
+      status: "🟢 Baseline Normal",
+      duration: 3500,
+      log: "⚡ Baseline Telemetry Initialized: Water 185 L/day, Power 14.2 kWh, LPG 59%, Inventory 92% Optimal.",
+      view: "dashboard",
+      targetId: "view-dashboard"
+    },
+    {
+      step: 2,
+      title: "Step 2: Water Consumption Sudden +30% Surge",
+      subtitle: "Sensors register an abnormal flow spike from 185 L/day to 240.5 L/day (+30.0% surge).",
+      status: "🟡 Surge Detected",
+      duration: 4000,
+      log: "💧 Telemetry Alert: Main Water Inflow line jumped +30.0% above 7-day average baseline!",
+      view: "water",
+      targetId: "view-water",
+      action: "waterSurge"
+    },
+    {
+      step: 3,
+      title: "Step 3: AI Micro-Leak Anomaly Diagnostics",
+      subtitle: "AI pattern recognition isolates continuous 0.4 L/min stream in Master Bathroom Line.",
+      status: "🔴 Leak Anomaly",
+      duration: 4500,
+      log: "⚠️ AI Anomaly Engine: Unclosed toilet tank flapper valve detected (0.4 L/min leak stream).",
+      view: "water",
+      targetId: "view-water",
+      action: "waterAnomaly"
+    },
+    {
+      step: 4,
+      title: "Step 4: Electricity Consumption Surge (HVAC AC Draw)",
+      subtitle: "Power consumption surges from 14.2 kWh to 19.8 kWh due to extended cooling setpoint.",
+      status: "🟠 Power Spike",
+      duration: 4000,
+      log: "⚡ Power Telemetry Spike: Whole-home electricity load increased to 19.8 kWh (1.95 kW draw).",
+      view: "electricity",
+      targetId: "view-electricity",
+      action: "powerSurge"
+    },
+    {
+      step: 5,
+      title: "Step 5: AI Appliance Diagnostic — Central HVAC AC Flagged",
+      subtitle: "AI telemetry parser flags Central HVAC Air Conditioner operating at +35.7% extra power load.",
+      status: "⚠️ HVAC Anomaly",
+      duration: 4500,
+      log: "🔍 AI Diagnostic: Central HVAC AC duty cycle exceeded 85%. Clogged filter + peak tariff operating hours.",
+      view: "electricity",
+      targetId: "view-electricity",
+      action: "acDiagnostic"
+    },
+    {
+      step: 6,
+      title: "Step 6: AI Food Spoilage Prediction & Zero-Waste Recipes",
+      subtitle: "AI predicts 1.8 kg vegetable spoilage in Smart Refrigerator & recommends zero-waste recipes.",
+      status: "🥦 Spoilage Alert",
+      duration: 5000,
+      log: "🥦 AI Spoilage Prediction: 1.8 kg fresh produce approaching expiration. Recipe suggestions generated!",
+      view: "predictions",
+      targetId: "view-predictions",
+      action: "recipeRecommend"
+    },
+    {
+      step: 7,
+      title: "Step 7: LPG Cylinder Low Depletion & Exhaustion Forecast",
+      subtitle: "LPG scale weight drops to 3.2 kg (22% Full); AI forecasts complete depletion in ~4 days.",
+      status: "🔥 Depletion Risk",
+      duration: 4500,
+      log: "🔥 LPG Gas Forecast: Cylinder weight 3.2 kg (22%). Predicted exhaustion date: Sept 8 (~4 days remaining).",
+      view: "lpg",
+      targetId: "view-lpg",
+      action: "lpgDepletion"
+    },
+    {
+      step: 8,
+      title: "Step 8: System Generates 1-Click Actionable Recommendations",
+      subtitle: "AI compiles personalized automated fix routines for Water, Electricity, Food, and LPG Refill.",
+      status: "⚡ AI Recommendations Ready",
+      duration: 4500,
+      log: "💡 AI Optimization Engine: 4 personalized actions generated ($148.50/mo potential savings).",
+      view: "predictions",
+      targetId: "view-predictions",
+      action: "generateActions"
+    },
+    {
+      step: 9,
+      title: "Step 9: Hackathon Impact Finale — Savings & Sustainability Score",
+      subtitle: "System displays final verified resource savings impact and updated EcoScore (92 → 98).",
+      status: "🏆 Hackathon Finale",
+      duration: 0,
+      log: "🎉 SMART USAGE ALERT — Detect. Predict. Alert. Save.",
+      view: "dashboard",
+      targetId: "view-dashboard",
+      action: "showFinaleModal"
+    }
+  ],
+
+  // Zero-Waste Recipe Recommendations Payload for Step 6
+  recipeRecommendations: [
+    {
+      id: 'rec-1',
+      title: 'Zero-Waste Veggie & Herb Golden Soup',
+      cookTime: '20 Mins',
+      wasteSaved: '1.2 kg Veggies Saved',
+      icon: 'soup',
+      ingredients: ['Produce Box Greens', 'Carrot Tops', 'Zucchini', 'Garlic & Herb Broth'],
+      description: 'Transform wilting leafy greens and root vegetables into a nutrient-rich, golden anti-inflammatory soup.'
+    },
+    {
+      id: 'rec-2',
+      title: 'Savory Crisper-Drawer Veggie Stir-Fry',
+      cookTime: '15 Mins',
+      wasteSaved: '0.6 kg Veggies Saved',
+      icon: 'utensils',
+      ingredients: ['Bell Peppers', 'Broccoli Florets', 'Cold-Pressed Cooking Oil', 'Soy Reduction'],
+      description: 'High-heat wok stir-fry utilizing high-water vegetables before crisper humidity degradation.'
+    }
+  ]
 };

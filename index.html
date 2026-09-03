@@ -108,6 +108,13 @@
             <input type="text" placeholder="Search resources, alerts...">
           </div>
 
+          <!-- 🚀 3D HACKATHON DEMO RUNNER BUTTON -->
+          <button class="btn btn-demo-3d" onclick="AppController.startHackathonDemo()">
+            <i data-lucide="play-circle" style="width:18px;"></i>
+            <span>🚀 Run AI Demo</span>
+            <span class="btn-demo-badge">LIVE</span>
+          </button>
+
           <div class="house-selector">
             <i data-lucide="home" style="width:16px; color:var(--accent-cyan);"></i>
             <span>Smart Home #104</span>
@@ -940,6 +947,130 @@
       <div style="display:flex; gap:12px; justify-content:flex-end;">
         <button class="btn btn-secondary" onclick="AppController.closeModal('lpg-modal')">Cancel</button>
         <button class="btn btn-primary" onclick="AppController.confirmLPGOrder()">Confirm Order ($18.50)</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- 🚀 3D HACKATHON DEMO FLOATING CONTROL DOCK -->
+  <div id="hackathon-demo-dock" class="hackathon-demo-dock-3d">
+    <div class="demo-dock-header">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="pulse-live-indicator"></span>
+        <strong style="color:var(--accent-cyan); font-size:0.95rem;">HACKATHON AI DEMO MODE</strong>
+        <span class="mono-badge" id="demo-step-badge">STEP 1 / 9</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <button class="btn btn-secondary btn-xs" onclick="AppController.prevDemoStep()"><i data-lucide="chevron-left"></i> Prev</button>
+        <button class="btn btn-primary btn-xs" id="demo-pause-btn" onclick="AppController.toggleDemoPause()"><i data-lucide="pause"></i> Pause</button>
+        <button class="btn btn-secondary btn-xs" onclick="AppController.nextDemoStep()">Next <i data-lucide="chevron-right"></i></button>
+        <button class="btn btn-secondary btn-xs" onclick="AppController.stopHackathonDemo()" style="color:var(--accent-crimson);"><i data-lucide="x"></i> Exit</button>
+      </div>
+    </div>
+
+    <div class="demo-dock-body">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <h4 id="demo-step-title" style="font-size:1.05rem; font-weight:800; color:#fff;">Step 1: Baseline Normal Telemetry</h4>
+        <span id="demo-step-status" class="status-pill success">🟢 Baseline Normal</span>
+      </div>
+      <p id="demo-step-subtitle" style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:10px;">
+        Monitoring initial baseline IoT telemetry parameters across Water, Electricity, LPG, and Inventory.
+      </p>
+
+      <!-- 3D Progress Bar -->
+      <div class="demo-progress-track">
+        <div id="demo-progress-fill" class="demo-progress-fill" style="width: 11%;"></div>
+      </div>
+
+      <!-- Real-time Scanner Log -->
+      <div class="demo-scanner-log" id="demo-scanner-log">
+        <i data-lucide="terminal" style="width:14px; color:var(--accent-cyan);"></i>
+        <span id="demo-log-text">⚡ Baseline Telemetry Initialized: Water 185 L/day, Power 14.2 kWh, LPG 59%, Inventory 92% Optimal.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🏆 3D HACKATHON GRAND FINALE IMPACT MODAL -->
+  <div id="hackathon-finale-modal" class="modal-overlay">
+    <div class="modal-container modal-3d-glow" style="max-width: 650px;">
+      <div style="text-align:center; margin-bottom: 20px;">
+        <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(0, 242, 254, 0.15); padding:6px 18px; border-radius:20px; border:1px solid rgba(0, 242, 254, 0.4); margin-bottom:12px;">
+          <i data-lucide="trophy" class="text-amber" style="width:18px;"></i>
+          <span style="font-size:0.85rem; font-weight:800; color:var(--accent-cyan); text-transform:uppercase; letter-spacing:1px;">AI Detection & Impact Complete</span>
+        </div>
+        <h2 style="font-size:1.8rem; font-weight:900; background:var(--grad-cyan-blue); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">
+          Resource Optimization Impact
+        </h2>
+        <p style="color:var(--text-muted); font-size:0.9rem; margin-top:4px;">
+          Real-time AI telemetry averted water leaks, reduced HVAC surges, cut LPG waste, and prevented food spoilage.
+        </p>
+      </div>
+
+      <!-- 3D Metric Grid Cards -->
+      <div class="grid-2" style="gap:16px; margin-bottom:24px;">
+        <div class="metric-card-3d">
+          <div class="metric-icon-box text-cyan"><i data-lucide="droplets"></i></div>
+          <div>
+            <div style="font-size:0.75rem; color:var(--text-muted); font-weight:700;">WATER SAVED</div>
+            <div class="mono text-cyan" style="font-size:1.6rem; font-weight:800;">1,440 L / mo</div>
+            <div style="font-size:0.72rem; color:var(--text-secondary);">Flapper Micro-leak Isolated</div>
+          </div>
+        </div>
+
+        <div class="metric-card-3d">
+          <div class="metric-icon-box text-amber"><i data-lucide="zap"></i></div>
+          <div>
+            <div style="font-size:0.75rem; color:var(--text-muted); font-weight:700;">ELECTRICITY SAVED</div>
+            <div class="mono text-amber" style="font-size:1.6rem; font-weight:800;">168 kWh / mo</div>
+            <div style="font-size:0.72rem; color:var(--text-secondary);">HVAC Duty Cycle Shifted</div>
+          </div>
+        </div>
+
+        <div class="metric-card-3d">
+          <div class="metric-icon-box text-emerald"><i data-lucide="dollar-sign"></i></div>
+          <div>
+            <div style="font-size:0.75rem; color:var(--text-muted); font-weight:700;">TOTAL MONEY SAVED</div>
+            <div class="mono text-emerald" style="font-size:1.6rem; font-weight:800;">$148.50 / mo</div>
+            <div style="font-size:0.72rem; color:var(--accent-emerald); font-weight:700;">$1,782.00 Annual Impact</div>
+          </div>
+        </div>
+
+        <div class="metric-card-3d">
+          <div class="metric-icon-box text-purple"><i data-lucide="leaf"></i></div>
+          <div>
+            <div style="font-size:0.75rem; color:var(--text-muted); font-weight:700;">CO₂ EMISSIONS AVOIDED</div>
+            <div class="mono text-purple" style="font-size:1.6rem; font-weight:800;">185.4 kg / mo</div>
+            <div style="font-size:0.72rem; color:var(--text-secondary);">~8.4 Trees Equivalent</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- EcoScore Jump Banner -->
+      <div style="background:linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(0, 242, 254, 0.15)); border:1px solid rgba(16, 185, 129, 0.4); border-radius:14px; padding:16px; display:flex; align-items:center; justify-content:space-between; margin-bottom:24px;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div style="width:44px; height:44px; border-radius:50%; background:rgba(16, 185, 129, 0.2); display:flex; align-items:center; justify-content:center; color:var(--accent-emerald); font-size:1.3rem;">
+            🏆
+          </div>
+          <div>
+            <div style="font-size:0.8rem; color:var(--text-muted); font-weight:700;">SUSTAINABILITY ECOSCORE IMPROVEMENT</div>
+            <div style="font-size:1.1rem; font-weight:800; color:#fff;">
+              Score Upgraded: <span style="text-decoration:line-through; color:var(--text-muted);">92</span> → <span class="text-emerald" style="font-size:1.4rem;">98 / 100</span> <span style="font-size:0.8rem; color:var(--accent-emerald); font-weight:700;">(+6 Points)</span>
+            </div>
+          </div>
+        </div>
+        <span class="status-pill success">Rank #1 District</span>
+      </div>
+
+      <!-- Final Tagline Conclusion -->
+      <div style="text-align:center; padding:16px; background:rgba(15, 23, 42, 0.8); border-radius:12px; border:1px solid var(--border-color); margin-bottom:20px;">
+        <div style="font-size:1.25rem; font-weight:900; letter-spacing:0.5px; background:var(--grad-cyan-blue); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">
+          SMART USAGE ALERT — Detect. Predict. Alert. Save.
+        </div>
+      </div>
+
+      <div style="display:flex; gap:12px; justify-content:center;">
+        <button class="btn btn-secondary" onclick="AppController.closeModal('hackathon-finale-modal')">Close Summary</button>
+        <button class="btn btn-primary" onclick="AppController.startHackathonDemo()"><i data-lucide="rotate-ccw"></i> Replay Hackathon AI Demo</button>
       </div>
     </div>
   </div>

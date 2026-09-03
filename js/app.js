@@ -791,5 +791,190 @@ I evaluated your request regarding **"${query}"** against your home telemetry.
         if (navWater) navWater.click();
       });
     }
+  },
+
+  // 🚀 HACKATHON DEMO CONTROLLER ENGINE
+  demoState: {
+    active: false,
+    paused: false,
+    currentStepIndex: 0,
+    timer: null
+  },
+
+  startHackathonDemo: function() {
+    this.closeModal('hackathon-finale-modal');
+    this.demoState.active = true;
+    this.demoState.paused = false;
+    this.demoState.currentStepIndex = 0;
+
+    const dock = document.getElementById('hackathon-demo-dock');
+    if (dock) dock.classList.add('active');
+
+    this.showToast('🚀 Hackathon AI Demo Started! Simulating real-time IoT resource anomaly detection...');
+    this.executeDemoStep(0);
+  },
+
+  executeDemoStep: function(index) {
+    if (!this.demoState.active) return;
+    if (index >= SmartData.hackathonDemoSteps.length) {
+      this.finishHackathonDemo();
+      return;
+    }
+
+    this.demoState.currentStepIndex = index;
+    const step = SmartData.hackathonDemoSteps[index];
+
+    // Update Dock UI
+    const elBadge = document.getElementById('demo-step-badge');
+    const elTitle = document.getElementById('demo-step-title');
+    const elSubtitle = document.getElementById('demo-step-subtitle');
+    const elStatus = document.getElementById('demo-step-status');
+    const elFill = document.getElementById('demo-progress-fill');
+    const elLog = document.getElementById('demo-log-text');
+    const elPauseBtn = document.getElementById('demo-pause-btn');
+
+    if (elBadge) elBadge.innerText = `STEP ${step.step} / 9`;
+    if (elTitle) elTitle.innerText = step.title;
+    if (elSubtitle) elSubtitle.innerText = step.subtitle;
+    if (elStatus) {
+      elStatus.innerText = step.status;
+      elStatus.className = `status-pill ${step.status.includes('Baseline') ? 'success' : (step.status.includes('Leak') || step.status.includes('Spoilage') ? 'danger' : 'warning')}`;
+    }
+    if (elFill) elFill.style.width = `${((step.step) / 9) * 100}%`;
+    if (elLog) elLog.innerText = step.log;
+    if (elPauseBtn) elPauseBtn.innerHTML = this.demoState.paused ? `<i data-lucide="play"></i> Resume` : `<i data-lucide="pause"></i> Pause`;
+
+    // Navigate to target view
+    if (step.view) {
+      const navItem = document.querySelector(`.nav-item[data-view="${step.view}"]`);
+      if (navItem) navItem.click();
+    }
+
+    // Execute Step Specific Telemetry Animations
+    if (step.action === 'waterSurge') {
+      const waterVal = document.getElementById('water-kpi-val');
+      if (waterVal) waterVal.innerHTML = `240.5 <span style="font-size:0.9rem;">L/day (+30%)</span>`;
+    } else if (step.action === 'waterAnomaly') {
+      this.showToast('⚠️ WATER ANOMALY: Micro-leak stream (0.4 L/min) isolated in Master Bathroom Valve!');
+    } else if (step.action === 'powerSurge') {
+      const powerVal = document.getElementById('power-kpi-val');
+      if (powerVal) powerVal.innerHTML = `19.8 <span style="font-size:0.9rem;">kWh (+39%)</span>`;
+    } else if (step.action === 'acDiagnostic') {
+      this.showToast('⚡ APPLIANCE DIAGNOSTIC: Central HVAC AC duty cycle exceeded 85% (+38.5% extra power load)!');
+    } else if (step.action === 'recipeRecommend') {
+      this.renderZeroWasteRecipes();
+      this.showToast('🥦 SPOILAGE RISK: 1.8 kg produce approaching expiration. Recipe suggestions ready!');
+    } else if (step.action === 'lpgDepletion') {
+      const lpgVal = document.getElementById('lpg-kpi-val');
+      if (lpgVal) lpgVal.innerHTML = `22% <span style="font-size:0.9rem;">Full (3.2 kg)</span>`;
+      this.showToast('🔥 LPG DEPLETION WARNING: Cylinder will run out in ~4 days (Sept 8)!');
+    } else if (step.action === 'generateActions') {
+      this.showToast('💡 AI OPTIMIZATION: 4 personalized actions generated with $148.50/mo total savings impact!');
+    } else if (step.action === 'showFinaleModal') {
+      this.finishHackathonDemo();
+      return;
+    }
+
+    if (window.lucide) lucide.createIcons();
+
+    // Auto schedule next step
+    if (this.demoState.timer) clearTimeout(this.demoState.timer);
+    if (!this.demoState.paused && step.duration > 0) {
+      this.demoState.timer = setTimeout(() => {
+        this.nextDemoStep();
+      }, step.duration);
+    }
+  },
+
+  nextDemoStep: function() {
+    if (this.demoState.currentStepIndex < SmartData.hackathonDemoSteps.length - 1) {
+      this.executeDemoStep(this.demoState.currentStepIndex + 1);
+    } else {
+      this.finishHackathonDemo();
+    }
+  },
+
+  prevDemoStep: function() {
+    if (this.demoState.currentStepIndex > 0) {
+      this.executeDemoStep(this.demoState.currentStepIndex - 1);
+    }
+  },
+
+  toggleDemoPause: function() {
+    this.demoState.paused = !this.demoState.paused;
+    if (!this.demoState.paused) {
+      this.showToast('▶️ Demo Resumed');
+      this.nextDemoStep();
+    } else {
+      if (this.demoState.timer) clearTimeout(this.demoState.timer);
+      this.showToast('⏸️ Demo Paused');
+      const elPauseBtn = document.getElementById('demo-pause-btn');
+      if (elPauseBtn) elPauseBtn.innerHTML = `<i data-lucide="play"></i> Resume`;
+      if (window.lucide) lucide.createIcons();
+    }
+  },
+
+  stopHackathonDemo: function() {
+    this.demoState.active = false;
+    if (this.demoState.timer) clearTimeout(this.demoState.timer);
+    const dock = document.getElementById('hackathon-demo-dock');
+    if (dock) dock.classList.remove('active');
+    this.showToast('⏹️ Hackathon AI Demo Stopped');
+  },
+
+  finishHackathonDemo: function() {
+    if (this.demoState.timer) clearTimeout(this.demoState.timer);
+    this.openModal('hackathon-finale-modal');
+    if (window.confetti) confetti({ particleCount: 120, spread: 90 });
+  },
+
+  renderZeroWasteRecipes: function() {
+    const grid = document.getElementById('ai-predictions-grid');
+    if (!grid) return;
+
+    const existingCard = document.getElementById('recipe-recommendation-card');
+    if (existingCard) return;
+
+    const recipeCard = document.createElement('div');
+    recipeCard.id = 'recipe-recommendation-card';
+    recipeCard.className = 'glass-card recipe-card-3d';
+    recipeCard.style.padding = '20px';
+    recipeCard.style.border = '1px solid rgba(16, 185, 129, 0.4)';
+    recipeCard.style.gridColumn = '1 / -1';
+    recipeCard.style.marginBottom = '20px';
+
+    recipeCard.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="width:38px; height:38px; border-radius:10px; background:rgba(16, 185, 129, 0.2); display:flex; align-items:center; justify-content:center; color:var(--accent-emerald); font-size:1.2rem;">🥦</div>
+          <div>
+            <h3 style="font-size:1.1rem; font-weight:800; color:#fff;">AI Zero-Waste Recipe Recommendations</h3>
+            <p style="font-size:0.8rem; color:var(--text-muted);">Prevent 1.8 kg vegetable spoilage before expiration!</p>
+          </div>
+        </div>
+        <span class="status-pill success"><i data-lucide="sparkles" style="width:14px;"></i> AI Recipe Match</span>
+      </div>
+
+      <div class="grid-2" style="gap:16px;">
+        ${SmartData.recipeRecommendations.map(r => `
+          <div style="background:rgba(15, 23, 42, 0.6); border-radius:12px; padding:16px; border:1px solid var(--border-color);">
+            <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+              <strong style="color:var(--accent-emerald); font-size:0.95rem;">${r.title}</strong>
+              <span class="mono-badge">${r.cookTime}</span>
+            </div>
+            <p style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:10px; line-height:1.4;">${r.description}</p>
+            <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px;">
+              ${r.ingredients.map(ing => `<span class="chip" style="font-size:0.72rem; padding:3px 8px;">${ing}</span>`).join('')}
+            </div>
+            <button class="btn btn-primary btn-sm" style="width:100%; justify-content:center;" onclick="AppController.showToast('👨‍🍳 Recipe Saved to Meal Plan! Prevented 1.2 kg produce waste.')">
+              <i data-lucide="book-open" style="width:14px;"></i> View Full Recipe & Cook
+            </button>
+          </div>
+        `).join('')}
+      </div>
+    `;
+
+    grid.insertBefore(recipeCard, grid.firstChild);
+    if (window.lucide) lucide.createIcons();
   }
 };

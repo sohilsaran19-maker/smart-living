@@ -659,14 +659,30 @@ const AppController = {
     const sendBtn = document.getElementById('ai-chat-send');
     if (!input || !sendBtn) return;
 
-    const sendMessage = () => {
+    const sendMessage = async () => {
       const query = input.value.trim();
       if (!query) return;
 
       this.appendChatMessage(query, 'user');
       input.value = '';
 
-      // Simulate Grok typing
+      // Call Backend REST API
+      try {
+        const response = await fetch('/api/assistant', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: query, householdId: AuthService.currentUser ? AuthService.currentUser.userId : 'sohil104' })
+        });
+        if (response.ok) {
+          const res = await response.json();
+          this.appendChatMessage(res.reply, 'assistant');
+          return;
+        }
+      } catch (e) {
+        // Backend offline fallback
+      }
+
+      // Offline Fallback
       setTimeout(() => {
         let reply = SmartData.aiKnowledge.responses[query];
         if (!reply) {
@@ -674,14 +690,14 @@ const AppController = {
 
 I evaluated your request regarding **"${query}"** against your home telemetry.
 
-- ⚡ **Electricity Status**: 14.2 kWh today (AC + Standby load).
-- 💧 **Water Status**: 185 L today (Micro-leak active in Bathroom).
-- 🛒 **Shopping Status**: 3 items in **Need Now** status ($32.69 cart).
+- ⚡ **Electricity Status**: 11.0 kWh today (37.5% above baseline).
+- 💧 **Water Status**: 175 L today (Micro-leak active in Garden Valve).
+- 🛒 **Shopping Status**: 3 items in **Need Now** status.
 
-💡 **Grok Actionable Tip**: Resolving your Standby Vampire load and running laundry after 9:00 PM will reduce your bill by **$35.80/month**!`;
+💡 **Grok Actionable Tip**: Resolving your AC duty cycle and running laundry after 9:00 PM will reduce your bill by **₹1,850/month**!`;
         }
         this.appendChatMessage(reply, 'assistant');
-      }, 600);
+      }, 500);
     };
 
     sendBtn.addEventListener('click', sendMessage);

@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SMART USAGE ALERT — Detect. Predict. Alert. Save.</title>
+  <meta name="description" content="Futuristic household resource monitoring and waste prevention web application for Electricity, Water, LPG Gas, and Consumables.">
+  
+  <!-- CSS Stylesheets -->
+  <link rel="stylesheet" href="css/style.css">
+
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Canvas Confetti CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+
+  <div id="app-container">
+
+    <!-- Sidebar Navigation (Utilities Focus: Electricity, Water, LPG, Consumables) -->
+    <sidebar>
+      <div class="sidebar-header">
+        <div class="logo-icon">
+          <i data-lucide="zap" style="width:24px; height:24px;"></i>
+        </div>
+        <div class="logo-text">
+          <span class="logo-title">SMART USAGE</span>
+          <span class="logo-subtitle">ALERT SYSTEM</span>
+        </div>
+      </div>
+
+      <ul class="nav-list">
+        <li class="nav-item active" data-view="dashboard">
+          <span class="nav-icon"><i data-lucide="layout-dashboard"></i></span>
+          <span>Dashboard</span>
+        </li>
+        <li class="nav-item" data-view="water">
+          <span class="nav-icon"><i data-lucide="droplets"></i></span>
+          <span>Water Usage</span>
+          <span class="nav-badge">1</span>
+        </li>
+        <li class="nav-item" data-view="electricity">
+          <span class="nav-icon"><i data-lucide="zap"></i></span>
+          <span>Electricity</span>
+        </li>
+        <li class="nav-item" data-view="lpg">
+          <span class="nav-icon"><i data-lucide="flame"></i></span>
+          <span>LPG & Gas</span>
+        </li>
+        <li class="nav-item" data-view="inventory">
+          <span class="nav-icon"><i data-lucide="shopping-bag"></i></span>
+          <span>Smart Shopping</span>
+          <span class="nav-badge" style="background:rgba(239,68,68,0.2); color:#ef4444; border-color:rgba(239,68,68,0.4);">3 Need Now</span>
+        </li>
+        <li class="nav-item" data-view="ai">
+          <span class="nav-icon"><i data-lucide="sparkles"></i></span>
+          <span>Grok AI Assistant</span>
+        </li>
+        <li class="nav-item" data-view="predictions">
+          <span class="nav-icon"><i data-lucide="brain-circuit"></i></span>
+          <span>AI Predictions Engine</span>
+          <span class="nav-badge" style="background:var(--accent-cyan-glow); color:var(--accent-cyan); border-color:rgba(0,242,254,0.4);">5</span>
+        </li>
+        <li class="nav-item" data-view="sustainability">
+          <span class="nav-icon"><i data-lucide="leaf"></i></span>
+          <span>Sustainability</span>
+        </li>
+        <li class="nav-item" data-view="community">
+          <span class="nav-icon"><i data-lucide="users"></i></span>
+          <span>Community</span>
+        </li>
+        <li class="nav-item" data-view="reports">
+          <span class="nav-icon"><i data-lucide="bar-chart-3"></i></span>
+          <span>Reports</span>
+        </li>
+      </ul>
+
+      <div class="sidebar-footer">
+        <div class="system-health">
+          <div class="status-dot"></div>
+          <div>
+            <div style="color:var(--text-primary); font-weight:600;">System Online</div>
+            <div style="font-size:0.7rem;">5 Utility IoT Sensors Connected</div>
+          </div>
+        </div>
+      </div>
+    </sidebar>
+
+    <!-- Main Content Shell -->
+    <main>
+
+      <!-- Global Top Header Bar -->
+      <header>
+        <div class="header-left">
+          <div class="header-tagline">
+            SMART USAGE ALERT <span>— Detect. Predict. Alert. Save.</span>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <div class="search-box">
+            <i data-lucide="search" class="search-icon" style="width:16px;"></i>
+            <input type="text" placeholder="Search resources, alerts...">
+          </div>
+
+          <div class="house-selector">
+            <i data-lucide="home" style="width:16px; color:var(--accent-cyan);"></i>
+            <span>Smart Home #104</span>
+            <i data-lucide="chevron-down" style="width:14px; color:var(--text-muted);"></i>
+          </div>
+
+          <button class="icon-btn" title="Alert Notifications">
+            <i data-lucide="bell" style="width:18px;"></i>
+            <span class="notification-badge"></span>
+          </button>
+
+          <div class="user-profile">
+            <div class="avatar">SH</div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Urgent Alert Ticker (Utilities Leak / Gas / Power) -->
+      <div class="alert-ticker">
+        <div class="ticker-content">
+          <span class="ticker-tag">URGENT ALERT</span>
+          <span><i data-lucide="alert-circle" style="width:16px; vertical-align:middle;"></i> <strong>Water Telemetry Warning:</strong> Micro-leak detected in Bathroom Line (0.4 L/min flow). 🔥 <strong>LPG Gas:</strong> Tank at 59%.</span>
+        </div>
+        <button class="ticker-action" id="alert-ticker-btn">Run Leak Test Now</button>
+      </div>
+
+      <!-- Main Dynamic Content Views -->
+      <div class="content-area">
+
+        <!-- 1. DASHBOARD VIEW -->
+        <section id="view-dashboard" class="view-section active">
+          <div class="page-title-group">
+            <div>
+              <h1 class="page-title"><i data-lucide="layout-dashboard" class="text-cyan"></i> Utility & Resource Dashboard</h1>
+              <p class="page-subtitle">Real-time telemetry monitoring across Water, Electricity, LPG Gas, and Household Consumables.</p>
+            </div>
+            <button class="btn btn-primary" onclick="AppController.exportPDFReport()">
+              <i data-lucide="download"></i> Export Telemetry Report
+            </button>
+          </div>
+
+          <!-- Status Level Indicator Bar -->
+          <div class="glass-card" style="padding: 12px 20px; margin-bottom: 24px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; background: rgba(11, 16, 28, 0.8);">
+            <div style="font-size:0.85rem; font-weight:700; color:var(--text-secondary); display:flex; align-items:center; gap:8px;">
+              <i data-lucide="info" class="text-cyan" style="width:16px;"></i> STATUS KEY:
+            </div>
+            <div style="display:flex; gap:16px; flex-wrap:wrap; font-size:0.8rem; font-weight:600;">
+              <span class="status-pill lvl-green">🟢 Green = Efficient</span>
+              <span class="status-pill lvl-yellow">🟡 Yellow = Moderate</span>
+              <span class="status-pill lvl-orange">🟠 Orange = High Usage</span>
+              <span class="status-pill lvl-red">🔴 Red = Critical</span>
+            </div>
+          </div>
+
+          <!-- 9 Main Dashboard KPI Cards (Utilities Focus) -->
+          <div class="grid-3" style="margin-bottom: 24px;">
+            
+            <!-- 1. Sustainability Score -->
+            <div class="glass-card kpi-card" style="--card-accent: var(--grad-emerald);">
+              <div class="kpi-header">
+                <span>Sustainability Score</span>
+                <div class="kpi-icon text-emerald"><i data-lucide="award"></i></div>
+              </div>
+              <div class="kpi-value text-emerald">92 <span style="font-size:1.1rem; color:var(--text-muted);">/ 100</span></div>
+              <div class="kpi-footer">
+                <span class="status-pill lvl-green">🟢 Efficient</span>
+                <span class="text-muted">Top 5% in District</span>
+              </div>
+            </div>
+
+            <!-- 2. Daily Water Consumption -->
+            <div class="glass-card kpi-card" style="--card-accent: var(--grad-cyan-blue);">
+              <div class="kpi-header">
+                <span>Daily Water Consumption</span>
+                <div class="kpi-icon text-cyan"><i data-lucide="droplets"></i></div>
+              </div>
+              <div class="kpi-value text-cyan">185 Liters</div>
+              <div class="kpi-footer">
+                <span class="status-pill lvl-green">🟢 Efficient</span>
+                <span class="text-muted">Target: 220 L / Day</span>
+              </div>
+            </div>
+
+            <!-- 3. Electricity Consumption -->
+            <div class="glass-card kpi-card" style="--card-accent: var(--grad-orange);">
+              <div class="kpi-header">
+                <span>Electricity Consumption</span>
+                <div class="kpi-icon text-amber"><i data-lucide="zap"></i></div>
+              </div>
+              <div class="kpi-value" style="color:var(--status-orange);">14.2 kWh <span style="font-size:0.9rem; color:var(--text-muted);">(1.84 kW)</span></div>
+              <div class="kpi-footer">
+                <span class="status-pill lvl-orange">🟠 High Usage</span>
+                <span class="text-muted">HVAC AC Active</span>
+              </div>
+            </div>
+
+            <!-- 4. Vampire Standby Load -->
+            <div class="glass-card kpi-card" style="--card-accent: var(--grad-orange);">
+              <div class="kpi-header">
+                <span>Vampire Standby Load</span>
+                <div class="kpi-icon text-crimson"><i data-lucide="ghost"></i></div>
+              </div>
+              <div class="kpi-value text-crimson">0.28 kW</div>
+              <div class="kpi-footer">
+                <span class="status-pill lvl-orange">🟠 High Usage</span>
+                <span class="text-muted">~$17.30/mo Wasted</span>
+              </div>
+            </div>
+
+            <!-- 5. LPG Cylinder Status -->
+            <div class="glass-card kpi-card" style="--card-accent: var(--grad-amber);">
+              <div class="kpi-header">
+                <span>LPG Cylinder Status</span>
+                <div class="kpi-icon text-amber"><i data-lucide="flame"></i></div>
+              </div>
+              <div class="kpi-value text-amber">59% Full <span style="font-size:0.9rem; color:var(--text-muted);">(8.4 kg)</span></div>
+              <div class="kpi-footer">
+                <span class="status-pill lvl-yellow">🟡 Moderate</span>
+                <span class="text-muted">~14 Days Left</span>
+              </div>
+            </div>
+
+            <!-- 6. Household Inventory Status -->
+            <div class="glass-card kpi-card" style="--card-accent: var(--grad-purple);">
+              <div class="kpi-header">
+                <span>Household Inventory Status</span>
+                <div class="kpi-icon text-purple"><i data-lucide="package"></i></div>
+              </div>
+              <div class="kpi-value text-purple">2 Low Stock</div>
+              <div class="kpi-footer">
+                <span class="status-pill lvl-yellow">🟡 Moderate</span>
+                <span class="text-muted">Filters & Rinse Aid</span>
+              </div>
+            </div>
+
+            <!-- 7. Money Saved This Month -->
+            <div class="glass-card kpi-card" style="--card-accent: var(--grad-emerald);">
+              <div class="kpi-header">
+                <span>Money Saved This Month</span>
+                <div class="kpi-icon text-emerald"><i data-lucide="dollar-sign"></i></div>
+              </div>
+              <div class="kpi-value text-emerald">$248.50</div>
+              <div class="kpi-footer">
+                <span class="status-pill lvl-green">🟢 Efficient</span>
+                <span class="text-muted">+18.4% vs last mo</span>
+              </div>
+            </div>
+
+            <!-- 8. Estimated CO2 Avoided -->
+            <div class="glass-card kpi-card" style="--card-accent: var(--grad-cyan-blue);">
+              <div class="kpi-header">
+                <span>CO₂ Emissions Avoided</span>
+                <div class="kpi-icon text-cyan"><i data-lucide="cloud-off"></i></div>
+              </div>
+              <div class="kpi-value text-cyan">142.5 kg</div>
+              <div class="kpi-footer">
+                <span class="status-pill lvl-green">🟢 Efficient</span>
+                <span class="text-muted">6.4 Trees Equivalent</span>
+              </div>
+            </div>
+
+            <!-- 9. Active Smart Alerts -->
+            <div class="glass-card kpi-card" style="--card-accent: var(--grad-crimson);">
+              <div class="kpi-header">
+                <span>Active Smart Alerts</span>
+                <div class="kpi-icon text-crimson"><i data-lucide="alert-triangle"></i></div>
+              </div>
+              <div class="kpi-value text-crimson">2 Alerts</div>
+              <div class="kpi-footer">
+                <span class="status-pill lvl-red">🔴 Critical</span>
+                <span class="text-muted">Gas & Water Micro-Leak</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- 🔮 AI WASTE & SHORTAGE PREDICTIVE INTELLIGENCE ENGINE -->
+          <div style="margin-bottom: 28px;">
+            <div class="card-header" style="margin-bottom:16px;">
+              <h2 class="card-title" style="font-size:1.25rem;"><i data-lucide="brain-circuit" class="text-cyan"></i> AI Waste & Shortage Predictive Intelligence Engine</h2>
+              <span class="status-pill info">Proactive AI Telemetry Analysis</span>
+            </div>
+            <div id="dashboard-predictions-grid" class="grid-2">
+              <!-- Populated via JS -->
+            </div>
+          </div>
+
+          <!-- 💰 WASTE-TO-MONEY CALCULATOR CARD -->
+          <div class="glass-card" style="margin-bottom: 28px; padding: 24px;">
+            <div class="card-header" style="margin-bottom: 16px;">
+              <div>
+                <h3 class="card-title" style="font-size:1.2rem;"><i data-lucide="calculator" class="text-emerald"></i> Waste-to-Money Financial Loss Calculator</h3>
+                <p style="font-size:0.85rem; color:var(--text-muted); margin-top:2px;">Adjust your estimated household waste levels to calculate total monthly and annual financial loss.</p>
+              </div>
+              <button class="btn btn-primary btn-sm" onclick="AppController.applyCalculatorZeroWastePlan()">
+                <i data-lucide="sparkles"></i> Auto-Apply Zero-Waste AI Plan
+              </button>
+            </div>
+
+            <div class="grid-2" style="gap:24px;">
+              <!-- Sliders Column -->
+              <div style="display:flex; flex-direction:column; gap:16px;">
+                <div>
+                  <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:6px;">
+                    <span style="color:var(--text-secondary); font-weight:600;"><i data-lucide="apple" class="text-emerald" style="width:14px;"></i> Food Waste (kg/week)</span>
+                    <span class="mono text-emerald" style="font-weight:700;" id="calc-food-val">1.8 kg/wk ($14.20)</span>
+                  </div>
+                  <input type="range" id="slider-food" min="0" max="5.0" step="0.1" value="1.8" class="custom-range" oninput="AppController.updateWasteCalculator()">
+                </div>
+
+                <div>
+                  <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:6px;">
+                    <span style="color:var(--text-secondary); font-weight:600;"><i data-lucide="zap" class="text-amber" style="width:14px;"></i> Standby Vampire Power (kW)</span>
+                    <span class="mono text-amber" style="font-weight:700;" id="calc-power-val">0.28 kW ($17.30)</span>
+                  </div>
+                  <input type="range" id="slider-power" min="0" max="1.0" step="0.05" value="0.28" class="custom-range" oninput="AppController.updateWasteCalculator()">
+                </div>
+
+                <div>
+                  <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:6px;">
+                    <span style="color:var(--text-secondary); font-weight:600;"><i data-lucide="droplets" class="text-cyan" style="width:14px;"></i> Water Leak Stream (L/day)</span>
+                    <span class="mono text-cyan" style="font-weight:700;" id="calc-water-val">180 L/day ($18.20)</span>
+                  </div>
+                  <input type="range" id="slider-water" min="0" max="1000" step="20" value="180" class="custom-range" oninput="AppController.updateWasteCalculator()">
+                </div>
+
+                <div>
+                  <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:6px;">
+                    <span style="color:var(--text-secondary); font-weight:600;"><i data-lucide="flame" class="text-crimson" style="width:14px;"></i> LPG Thermal Waste (kg/mo)</span>
+                    <span class="mono text-crimson" style="font-weight:700;" id="calc-lpg-val">1.7 kg/mo ($18.50)</span>
+                  </div>
+                  <input type="range" id="slider-lpg" min="0" max="5.0" step="0.1" value="1.7" class="custom-range" oninput="AppController.updateWasteCalculator()">
+                </div>
+              </div>
+
+              <!-- Output Display Card Column -->
+              <div style="background:rgba(15, 23, 42, 0.6); border-radius:14px; border:1px solid var(--border-color); padding:20px; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center;">
+                <div style="font-size:0.8rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">Calculated Monthly Financial Loss</div>
+                <div class="mono text-crimson" style="font-size:2.8rem; font-weight:800; margin:8px 0;" id="calc-monthly-total">$68.20 / mo</div>
+                
+                <div style="display:inline-flex; align-items:center; gap:6px; background:rgba(239, 68, 68, 0.12); padding:6px 14px; border-radius:20px; border:1px solid rgba(239,68,68,0.3); font-size:0.85rem; color:var(--accent-crimson); font-weight:700;">
+                  <i data-lucide="trending-up" style="width:14px;"></i> Projected Annual Loss: <span id="calc-annual-total">$818.40 / yr</span>
+                </div>
+
+                <div style="margin-top:16px; font-size:0.78rem; color:var(--text-secondary); line-height:1.4;">
+                  By executing our 1-click AI Zero-Waste recommendations, you can reclaim <strong class="text-emerald" id="calc-reclaim-amt">$68.20 every month</strong> back into your family budget.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Main Dashboard Charts & Live Telemetry -->
+          <div class="grid-2-1">
+            <div class="glass-card">
+              <div class="card-header">
+                <h3 class="card-title"><i data-lucide="line-chart" class="text-cyan"></i> Utility Overview Chart (Electricity, Water, LPG, Solar)</h3>
+                <span class="status-pill info">Live 7-Day Synchronized Telemetry</span>
+              </div>
+              <div style="height: 330px; position: relative;">
+                <canvas id="dashboardTrendChart"></canvas>
+              </div>
+            </div>
+
+            <div class="glass-card">
+              <div class="card-header">
+                <h3 class="card-title"><i data-lucide="cpu" class="text-emerald"></i> IoT Sensor Telemetry Grid</h3>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:12px;">
+                <div style="display:flex; justify-content:space-between; padding:12px; background:rgba(255,255,255,0.03); border-radius:10px;">
+                  <div>
+                    <div style="font-weight:600;">Main Water Flow Sensor</div>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">Bathroom Pipe #1</div>
+                  </div>
+                  <div style="text-align:right;">
+                    <div class="mono text-cyan" style="font-weight:700;">2.4 L/min</div>
+                    <span class="status-pill lvl-green" style="font-size:0.65rem; padding:1px 6px;">🟢 Efficient</span>
+                  </div>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; padding:12px; background:rgba(255,255,255,0.03); border-radius:10px;">
+                  <div>
+                    <div style="font-weight:600;">Smart Power Meter</div>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">Main Breaker</div>
+                  </div>
+                  <div style="text-align:right;">
+                    <div class="mono" style="font-weight:700; color:var(--status-orange);">1.84 kW</div>
+                    <span class="status-pill lvl-orange" style="font-size:0.65rem; padding:1px 6px;">🟠 High Usage</span>
+                  </div>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; padding:12px; background:rgba(255,255,255,0.03); border-radius:10px;">
+                  <div>
+                    <div style="font-weight:600;">LPG Cylinder Load Cell</div>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">Kitchen Scale</div>
+                  </div>
+                  <div style="text-align:right;">
+                    <div class="mono text-amber" style="font-weight:700;">8.4 kg (59%)</div>
+                    <span class="status-pill lvl-yellow" style="font-size:0.65rem; padding:1px 6px;">🟡 Moderate</span>
+                  </div>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; padding:12px; background:rgba(255,255,255,0.03); border-radius:10px;">
+                  <div>
+                    <div style="font-weight:600;">Solar Panel Inverter</div>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">Roof Array</div>
+                  </div>
+                  <div style="text-align:right;">
+                    <div class="mono text-emerald" style="font-weight:700;">7.9 kWh Gen</div>
+                    <span class="status-pill lvl-green" style="font-size:0.65rem; padding:1px 6px;">🟢 Generating</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Action Controls -->
+          <div class="glass-card bg-cyan-glow">
+            <div class="card-header">
+              <h3 class="card-title"><i data-lucide="zap" class="text-cyan"></i> Instant Resource Optimization Center</h3>
+            </div>
+            <div style="display:flex; gap:16px; flex-wrap:wrap;">
+              <button class="btn btn-secondary" onclick="AppController.runLeakDiagnostic()">
+                <i data-lucide="droplets"></i> Run Water Leak Test
+              </button>
+              <button class="btn btn-secondary" onclick="AppController.toggleVampireDevice('Standby Electronics', false)">
+                <i data-lucide="power"></i> Cut Vampire Standby Load
+              </button>
+              <button class="btn btn-primary" onclick="AppController.bookLPGRefill()">
+                <i data-lucide="flame"></i> Book LPG Cylinder Refill
+              </button>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- 2. WATER USAGE VIEW -->
+        <section id="view-water" class="view-section">
+          <div class="page-title-group">
+            <div>
+              <h1 class="page-title"><i data-lucide="droplets" class="text-cyan"></i> Water Usage & Smart Leak Monitor</h1>
+              <p class="page-subtitle">Real-time flow telemetry, automated leak diagnostics, and digital shutoff valve control.</p>
+            </div>
+            <button class="btn btn-primary" id="leak-test-btn" onclick="AppController.runLeakDiagnostic()">
+              <i data-lucide="activity"></i> Run Diagnostic Leak Test
+            </button>
+          </div>
+
+          <div id="leak-test-result" style="display:none; margin-bottom:24px;"></div>
+
+          <div class="grid-4">
+            <div class="glass-card">
+              <div class="kpi-header"><span>Live Flow Rate</span><i data-lucide="gauge" class="text-cyan"></i></div>
+              <div class="kpi-value text-cyan">2.4 L/min</div>
+              <div class="kpi-footer"><span class="trend-badge positive">Normal Flow</span></div>
+            </div>
+            <div class="glass-card">
+              <div class="kpi-header"><span>Daily Water Consumed</span><i data-lucide="droplet" class="text-blue"></i></div>
+              <div class="kpi-value text-blue">185 Liters</div>
+              <div class="kpi-footer"><span class="text-muted">Target: 220 Liters</span></div>
+            </div>
+            <div class="glass-card">
+              <div class="kpi-header"><span>Water Saved This Month</span><i data-lucide="check-circle" class="text-emerald"></i></div>
+              <div class="kpi-value text-emerald">1,850 L</div>
+              <div class="kpi-footer"><span class="trend-badge positive">+$18.20 Saved</span></div>
+            </div>
+            <div class="glass-card">
+              <div class="kpi-header"><span>Main Shutoff Valve</span><i data-lucide="shield" class="text-emerald"></i></div>
+              <div class="kpi-value text-emerald" style="font-size:1.5rem;">ONLINE</div>
+              <div class="kpi-footer"><span class="text-muted">Digital Control Active</span></div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="glass-card">
+              <div class="card-header">
+                <h3 class="card-title"><i data-lucide="bar-chart-2" class="text-cyan"></i> Room Consumption Breakdown</h3>
+              </div>
+              <div style="height: 280px; position:relative;">
+                <canvas id="waterRoomChart"></canvas>
+              </div>
+            </div>
+
+            <div class="glass-card">
+              <div class="card-header">
+                <h3 class="card-title"><i data-lucide="sliders" class="text-cyan"></i> Smart Digital Valve Controls</h3>
+              </div>
+              <div id="water-valves-list" style="display:flex; flex-direction:column; gap:14px;">
+                <!-- Populated via JS -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- 3. ELECTRICITY VIEW -->
+        <section id="view-electricity" class="view-section">
+          <div class="page-title-group">
+            <div>
+              <h1 class="page-title"><i data-lucide="zap" class="text-cyan"></i> Electricity & Vampire Power Hunter</h1>
+              <p class="page-subtitle">Identify phantom standby energy drains, monitor appliance kW draw, and optimize tariff timing.</p>
+            </div>
+          </div>
+
+          <div class="grid-4">
+            <div class="glass-card">
+              <div class="kpi-header"><span>Live Power Draw</span><i data-lucide="activity" class="text-cyan"></i></div>
+              <div class="kpi-value text-cyan">1.84 kW</div>
+              <div class="kpi-footer"><span class="trend-badge positive">Off-Peak Rate</span></div>
+            </div>
+            <div class="glass-card">
+              <div class="kpi-header"><span>Vampire Standby Draw</span><i data-lucide="ghost" class="text-crimson"></i></div>
+              <div class="kpi-value text-crimson">0.28 kW</div>
+              <div class="kpi-footer"><span class="trend-badge negative">~$17.30/mo Wasted</span></div>
+            </div>
+            <div class="glass-card">
+              <div class="kpi-header"><span>Today's Energy Usage</span><i data-lucide="bolt" class="text-amber"></i></div>
+              <div class="kpi-value text-amber">14.2 kWh</div>
+              <div class="kpi-footer"><span class="text-muted">Target: 18.0 kWh</span></div>
+            </div>
+            <div class="glass-card">
+              <div class="kpi-header"><span>Current Tariff Period</span><i data-lucide="clock" class="text-emerald"></i></div>
+              <div class="kpi-value text-emerald" style="font-size:1.3rem;">Off-Peak ($0.14)</div>
+              <div class="kpi-footer"><span class="text-muted">Peak starts at 6:00 PM</span></div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="glass-card">
+              <div class="card-header">
+                <h3 class="card-title"><i data-lucide="pie-chart" class="text-purple"></i> Appliance Energy Breakdown</h3>
+              </div>
+              <div style="height:280px; position:relative;">
+                <canvas id="electricityApplianceChart"></canvas>
+              </div>
+            </div>
+
+            <div class="glass-card">
+              <div class="card-header">
+                <h3 class="card-title"><i data-lucide="power" class="text-crimson"></i> Vampire Power Drains (Kill Switches)</h3>
+              </div>
+              <div id="vampire-devices-list" style="display:flex; flex-direction:column; gap:12px;">
+                <!-- Populated via JS -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Appliance Energy Telemetry & Anomaly Analysis Table (AC, Refrigerator, Fan, Washing Machine, TV, Water Heater) -->
+          <div class="glass-card" style="margin-bottom:24px;">
+            <div class="card-header">
+              <h3 class="card-title"><i data-lucide="cpu" class="text-cyan"></i> Appliance Energy Telemetry & Anomaly Analysis (Normal vs Current)</h3>
+              <span class="status-pill info">6 Connected Major Appliances</span>
+            </div>
+            <div style="overflow-x:auto;">
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <th>Appliance</th>
+                    <th>Normal</th>
+                    <th>Current</th>
+                    <th>% Surge</th>
+                    <th>Anomaly Status</th>
+                    <th>Possible Cause</th>
+                    <th>Recommendation</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="appliance-telemetry-table">
+                  <!-- Populated via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- 4. LPG & GAS VIEW -->
+        <section id="view-lpg" class="view-section">
+          <div class="page-title-group">
+            <div>
+              <h1 class="page-title"><i data-lucide="flame" class="text-amber"></i> LPG Cylinder & Gas Safety Hub</h1>
+              <p class="page-subtitle">Smart scale readings, gas leak telemetry, depletion predictions, and 1-click auto-refill.</p>
+            </div>
+            <button class="btn btn-primary" onclick="AppController.bookLPGRefill()">
+              <i data-lucide="shopping-cart"></i> Book 1-Click Refill
+            </button>
+          </div>
+
+          <div class="grid-4">
+            <div class="glass-card">
+              <div class="kpi-header"><span>Cylinder Weight</span><i data-lucide="scale" class="text-amber"></i></div>
+              <div class="kpi-value text-amber">8.4 kg</div>
+              <div class="kpi-footer"><span class="text-muted">Capacity: 14.2 kg</span></div>
+            </div>
+            <div class="glass-card">
+              <div class="kpi-header"><span>Fill Percentage</span><i data-lucide="pie-chart" class="text-emerald"></i></div>
+              <div class="kpi-value text-emerald">59% Full</div>
+              <div class="kpi-footer"><span class="trend-badge positive">Safe Level</span></div>
+            </div>
+            <div class="glass-card">
+              <div class="kpi-header"><span>Est. Days Remaining</span><i data-lucide="calendar" class="text-cyan"></i></div>
+              <div class="kpi-value text-cyan">14 Days</div>
+              <div class="kpi-footer"><span class="text-muted">Daily Rate: 0.38 kg</span></div>
+            </div>
+            <div class="glass-card">
+              <div class="kpi-header"><span>Gas Leak / CO Sensor</span><i data-lucide="shield-check" class="text-emerald"></i></div>
+              <div class="kpi-value text-emerald" style="font-size:1.4rem;">NORMAL (4 ppm)</div>
+              <div class="kpi-footer"><span class="text-muted">Safety Valve Armed</span></div>
+            </div>
+          </div>
+
+          <div class="glass-card">
+            <div class="card-header">
+              <h3 class="card-title"><i data-lucide="trending-down" class="text-amber"></i> Cylinder Weight Depletion & AI Forecast</h3>
+              <div id="lpg-order-status"></div>
+            </div>
+            <div style="height: 300px; position:relative;">
+              <canvas id="lpgDepletionChart"></canvas>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- 5. SMART SHOPPING ASSISTANT VIEW -->
+        <section id="view-inventory" class="view-section">
+          <div class="page-title-group">
+            <div>
+              <h1 class="page-title"><i data-lucide="shopping-bag" class="text-purple"></i> Smart Shopping Assistant & Inventory Classifier</h1>
+              <p class="page-subtitle">AI inventory categorizer separating items into <strong>Need Now</strong>, <strong>Need Soon</strong>, and <strong>Don't Buy Yet</strong> to prevent over-purchasing and waste.</p>
+            </div>
+            <button class="btn btn-primary" onclick="AppController.reorderAllNeedNow()">
+              <i data-lucide="shopping-cart"></i> Reorder All "Need Now" ($32.69)
+            </button>
+          </div>
+
+          <!-- 3-Tier Classification Status Filter Chips -->
+          <div class="glass-card" style="padding: 14px 20px; margin-bottom: 24px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+            <div style="display:flex; gap:8px; flex-wrap:wrap;" id="shopping-status-filters">
+              <button class="prediction-filter-chip active" onclick="AppController.filterShoppingList('all', this)">All Items (9)</button>
+              <button class="prediction-filter-chip" onclick="AppController.filterShoppingList('need-now', this)">🔴 Need Now (3)</button>
+              <button class="prediction-filter-chip" onclick="AppController.filterShoppingList('need-soon', this)">🟡 Need Soon (3)</button>
+              <button class="prediction-filter-chip" onclick="AppController.filterShoppingList('dont-buy', this)">🟢 Don't Buy Yet (3)</button>
+            </div>
+            <span class="status-pill info"><i data-lucide="shield-check" style="width:14px;"></i> Smart Reorder Protection Active</span>
+          </div>
+
+          <!-- Smart Shopping Grid Container -->
+          <div id="smart-shopping-grid" class="grid-3">
+            <!-- Populated via JS -->
+          </div>
+        </section>
+
+
+        <!-- 6. GROK AI ASSISTANT VIEW -->
+        <section id="view-ai" class="view-section">
+          <div class="page-title-group">
+            <div>
+              <h1 class="page-title"><i data-lucide="sparkles" class="text-cyan"></i> Grok AI Resource Strategist & Conversational Assistant</h1>
+              <p class="page-subtitle">Ask Grok AI any question about your electricity bill, water leak telemetry, shopping assistant, and waste savings.</p>
+            </div>
+          </div>
+
+          <!-- AI Predictions Section -->
+          <div style="margin-bottom:24px;">
+            <div class="card-header" style="margin-bottom:12px;">
+              <h3 class="card-title"><i data-lucide="brain-circuit" class="text-cyan"></i> Grok AI Predictive Intelligence Scans</h3>
+              <span class="status-pill info">Real-Time Telemetry Analysis</span>
+            </div>
+            <div id="ai-predictions-grid" class="grid-2">
+              <!-- Populated via JS -->
+            </div>
+          </div>
+
+          <div class="chat-container">
+            <div class="prompt-chips" id="grok-preset-chips">
+              <span class="chip" onclick="AppController.sendPresetPrompt('🛒 What items do I need to buy today?')">🛒 What items to buy today?</span>
+              <span class="chip" onclick="AppController.sendPresetPrompt('⚡ How can I cut my electricity bill by 25% this month?')">⚡ Cut Power Bill 25%</span>
+              <span class="chip" onclick="AppController.sendPresetPrompt('🔥 How can I reduce my LPG gas consumption?')">🔥 Reduce LPG Gas Usage</span>
+              <span class="chip" onclick="AppController.sendPresetPrompt('💧 Why did my water consumption spike this morning?')">💧 Water Spike Diagnostic</span>
+              <span class="chip" onclick="AppController.sendPresetPrompt('💰 Calculate my annual waste savings potential')">💰 Waste-to-Money Audit</span>
+            </div>
+
+            <div id="ai-chat-messages" class="chat-messages">
+              <div class="message-bubble assistant">
+                👋 Hello! I am <strong>Grok AI Assistant</strong>, your home resource strategist. I am monitoring your Water, Electricity, LPG, and Shopping inventory in real-time. Ask me anything!
+              </div>
+            </div>
+
+            <div class="chat-input-area">
+              <input type="text" id="ai-chat-input" placeholder="Ask Grok AI any question about your home usage, shopping list, or savings...">
+              <button class="btn btn-primary" id="ai-chat-send">
+                <i data-lucide="send"></i> Ask Grok
+              </button>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- 6.5. AI PREDICTIONS ENGINE VIEW -->
+        <section id="view-predictions" class="view-section">
+          <div class="page-title-group">
+            <div>
+              <h1 class="page-title"><i data-lucide="brain-circuit" class="text-cyan"></i> AI Waste & Shortage Prediction Engine</h1>
+              <p class="page-subtitle">Proactive telemetry AI predicting food waste, power spikes, LPG depletion, cooking oil shortages, and water anomalies.</p>
+            </div>
+            <button class="btn btn-primary" id="run-ai-scan-btn" onclick="AppController.runAIScan()">
+              <i data-lucide="sparkles"></i> Run Live AI Telemetry Scan
+            </button>
+          </div>
+
+          <!-- Predictions Engine Summary Stats -->
+          <div class="grid-4" style="margin-bottom: 24px;">
+            <div class="glass-card">
+              <div class="kpi-header"><span>Total Potential Savings</span><i data-lucide="piggy-bank" class="text-emerald"></i></div>
+              <div class="kpi-value text-emerald" style="font-size:1.8rem;">$67.40 / mo</div>
+              <div class="kpi-footer"><span class="trend-badge positive">+1.8 kg Food Saved</span></div>
+            </div>
+            <div class="glass-card">
+              <div class="kpi-header"><span>Active Risk Scans</span><i data-lucide="shield-alert" class="text-amber"></i></div>
+              <div class="kpi-value text-amber" style="font-size:1.8rem;" id="active-predictions-count">5 Predictions</div>
+              <div class="kpi-footer"><span class="status-pill lvl-orange">🟠 Proactive Protection</span></div>
+            </div>
+            <div class="glass-card">
+              <div class="kpi-header"><span>AI Engine Precision</span><i data-lucide="award" class="text-cyan"></i></div>
+              <div class="kpi-value text-cyan" style="font-size:1.8rem;">95.4%</div>
+              <div class="kpi-footer"><span class="trend-badge positive">5 IoT Sensor Feeds</span></div>
+            </div>
+            <div class="glass-card">
+              <div class="kpi-header"><span>Critical Anomaly Alert</span><i data-lucide="alert-triangle" class="text-crimson"></i></div>
+              <div class="kpi-value text-crimson" style="font-size:1.8rem;">1 Critical</div>
+              <div class="kpi-footer"><span class="status-pill lvl-red">🔴 Water Micro-Leak</span></div>
+            </div>
+          </div>
+
+          <!-- Category Filter Bar & Stream Status -->
+          <div class="glass-card" style="padding: 14px 20px; margin-bottom: 24px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+            <div style="display:flex; gap:8px; flex-wrap:wrap;" id="prediction-category-filters">
+              <button class="prediction-filter-chip active" onclick="AppController.filterPredictions('all', this)">All Predictions (5)</button>
+              <button class="prediction-filter-chip" onclick="AppController.filterPredictions('food', this)">🥦 Food & Vegetables</button>
+              <button class="prediction-filter-chip" onclick="AppController.filterPredictions('electricity', this)">⚡ Electricity</button>
+              <button class="prediction-filter-chip" onclick="AppController.filterPredictions('lpg', this)">🔥 LPG Gas</button>
+              <button class="prediction-filter-chip" onclick="AppController.filterPredictions('oil', this)">🛢️ Cooking Oil & Supplies</button>
+              <button class="prediction-filter-chip" onclick="AppController.filterPredictions('water', this)">💧 Water</button>
+            </div>
+            <span class="status-pill info"><i data-lucide="activity" style="width:14px;"></i> Real-Time Risk Analysis</span>
+          </div>
+
+          <!-- Main Predictions Engine Cards Grid -->
+          <div id="main-predictions-grid" class="grid-2">
+            <!-- Populated dynamically via JS -->
+          </div>
+        </section>
+
+
+        <!-- 7. SUSTAINABILITY VIEW -->
+        <section id="view-sustainability" class="view-section">
+          <div class="page-title-group">
+            <div>
+              <h1 class="page-title"><i data-lucide="leaf" class="text-emerald"></i> Sustainability & Carbon Impact</h1>
+              <p class="page-subtitle">Visualize your environmental footprint reduction, trees saved, and unlock sustainability badges.</p>
+            </div>
+          </div>
+
+          <div class="grid-4">
+            <div class="glass-card">
+              <div class="kpi-header"><span>Carbon Reduced</span><i data-lucide="cloud-off" class="text-emerald"></i></div>
+              <div class="kpi-value text-emerald">142.5 kg</div>
+              <div class="kpi-footer"><span class="text-muted">CO2 Equivalent</span></div>
+            </div>
+            <div class="glass-card">
+              <div class="kpi-header"><span>Tree Offset</span><i data-lucide="trees" class="text-emerald"></i></div>
+              <div class="kpi-value text-emerald">6.4 Trees</div>
+              <div class="kpi-footer"><span class="text-muted">Absorbed Annually</span></div>
+            </div>
+            <div class="glass-card">
+              <div class="kpi-header"><span>Water Saved</span><i data-lucide="droplet" class="text-cyan"></i></div>
+              <div class="kpi-value text-cyan">1,850 L</div>
+              <div class="kpi-footer"><span class="text-muted"> conserved</span></div>
+            </div>
+            <div class="glass-card">
+              <div class="kpi-header"><span>Eco Level</span><i data-lucide="shield-check" class="text-purple"></i></div>
+              <div class="kpi-value text-purple">Level 4</div>
+              <div class="kpi-footer"><span class="text-muted">Master Saver</span></div>
+            </div>
+          </div>
+
+          <div class="grid-2-1">
+            <div class="glass-card">
+              <div class="card-header">
+                <h3 class="card-title"><i data-lucide="radar" class="text-cyan"></i> Sustainability Index vs District Average</h3>
+              </div>
+              <div style="height:300px; position:relative;">
+                <canvas id="carbonRadarChart"></canvas>
+              </div>
+            </div>
+
+            <!-- Savings Calculator -->
+            <div class="glass-card bg-emerald-glow">
+              <div class="card-header">
+                <h3 class="card-title"><i data-lucide="calculator" class="text-emerald"></i> Annual Impact Calculator</h3>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:16px;">
+                <div>
+                  <label style="font-size:0.85rem; color:var(--text-secondary);">Household Members: <strong id="calc-members-val">3</strong></label>
+                  <input type="range" id="calc-members" min="1" max="8" value="3" style="width:100%; margin-top:6px;">
+                </div>
+                <div>
+                  <label style="font-size:0.85rem; color:var(--text-secondary);">Avg Monthly Utility Budget: <strong id="calc-budget-val">$250</strong></label>
+                  <input type="range" id="calc-budget" min="50" max="600" value="250" style="width:100%; margin-top:6px;">
+                </div>
+
+                <div style="padding:16px; background:rgba(0,0,0,0.3); border-radius:12px; margin-top:8px;">
+                  <div style="font-size:0.8rem; color:var(--text-muted);">Projected Annual Savings:</div>
+                  <div id="calc-saved-val" class="mono text-emerald" style="font-size:1.8rem; font-weight:800;">$795.00 / yr</div>
+                  <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:0.8rem;">
+                    <span>CO2 Reduced: <strong id="calc-co2-val" class="text-cyan">675 kg</strong></span>
+                    <span>Trees: <strong id="calc-trees-val" class="text-emerald">30.7 Trees</strong></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- 8. COMMUNITY VIEW -->
+        <section id="view-community" class="view-section">
+          <div class="page-title-group">
+            <div>
+              <h1 class="page-title"><i data-lucide="users" class="text-purple"></i> Green Oak Community & Sharing Network</h1>
+              <p class="page-subtitle">Compete on local eco-leaderboards and share surplus energy equipment or supplies with neighbors.</p>
+            </div>
+          </div>
+
+          <div class="grid-2-1">
+            <div class="glass-card">
+              <div class="card-header">
+                <h3 class="card-title"><i data-lucide="trophy" class="text-amber"></i> District Eco-Leaderboard</h3>
+                <span class="status-pill info">Green Oak District</span>
+              </div>
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <th>Rank</th>
+                    <th>Household</th>
+                    <th>Badge</th>
+                    <th>Monthly Savings</th>
+                    <th>Eco Points</th>
+                  </tr>
+                </thead>
+                <tbody id="community-leaderboard">
+                  <!-- Populated via JS -->
+                </tbody>
+              </table>
+            </div>
+
+            <div class="glass-card">
+              <div class="card-header">
+                <h3 class="card-title"><i data-lucide="heart" class="text-magenta"></i> Resource Sharing Marketplace</h3>
+              </div>
+              <div id="community-marketplace" style="display:flex; flex-direction:column; gap:12px;">
+                <!-- Populated via JS -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- 9. REPORTS VIEW -->
+        <section id="view-reports" class="view-section">
+          <div class="page-title-group">
+            <div>
+              <h1 class="page-title"><i data-lucide="bar-chart-3" class="text-cyan"></i> Analytics & Telemetry Reports</h1>
+              <p class="page-subtitle">Deep dive historical comparison, budget breakdown, and forecast export tools.</p>
+            </div>
+            <div style="display:flex; gap:10px;">
+              <button class="btn btn-secondary" onclick="AppController.exportCSVData()">
+                <i data-lucide="file-spreadsheet"></i> Export CSV
+              </button>
+              <button class="btn btn-primary" onclick="AppController.exportPDFReport()">
+                <i data-lucide="printer"></i> Print / PDF Report
+              </button>
+            </div>
+          </div>
+
+          <div class="glass-card" style="margin-bottom:24px;">
+            <div class="card-header">
+              <h3 class="card-title"><i data-lucide="git-compare" class="text-emerald"></i> Resource Cost Comparison (Current vs Previous Month)</h3>
+              <select style="background:rgba(255,255,255,0.05); color:#fff; border:1px solid var(--border-color); padding:6px 12px; border-radius:8px;">
+                <option>This Month vs Last Month</option>
+                <option>Q3 2026 Summary</option>
+                <option>Year-to-Date 2026</option>
+              </select>
+            </div>
+            <div style="height: 320px; position:relative;">
+              <canvas id="reportsChart"></canvas>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+
+  </div>
+
+
+  <!-- Modals -->
+  <!-- LPG Refill Booking Modal -->
+  <div id="lpg-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <h3 style="font-size:1.2rem; font-weight:700;"><i data-lucide="flame" class="text-amber"></i> Book LPG Cylinder Refill</h3>
+        <button onclick="AppController.closeModal('lpg-modal')" style="background:none; border:none; color:var(--text-muted); cursor:pointer;"><i data-lucide="x"></i></button>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:14px; margin-bottom:24px;">
+        <div style="padding:12px; background:rgba(255,255,255,0.03); border-radius:10px;">
+          <div style="font-size:0.8rem; color:var(--text-muted);">Delivery Address:</div>
+          <div style="font-weight:600;">Smart Home #104, Green Oak District</div>
+        </div>
+        <div style="padding:12px; background:rgba(255,255,255,0.03); border-radius:10px;">
+          <div style="font-size:0.8rem; color:var(--text-muted);">Cylinder Spec:</div>
+          <div style="font-weight:600;">14.2 kg Standard LPG Tank</div>
+        </div>
+        <div style="padding:12px; background:rgba(0,242,254,0.1); border-radius:10px; border:1px solid rgba(0,242,254,0.3);">
+          <div style="font-size:0.8rem; color:var(--accent-cyan);">Estimated Delivery:</div>
+          <div style="font-weight:700; color:#fff;">Tomorrow by 10:00 AM (24 Hours)</div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:12px; justify-content:flex-end;">
+        <button class="btn btn-secondary" onclick="AppController.closeModal('lpg-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="AppController.confirmLPGOrder()">Confirm Order ($18.50)</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Application Scripts -->
+  <script src="js/data.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

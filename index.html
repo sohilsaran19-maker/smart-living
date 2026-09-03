@@ -126,8 +126,38 @@
             <span class="notification-badge"></span>
           </button>
 
-          <div class="user-profile">
-            <div class="avatar">SH</div>
+          <!-- User Profile & Dropdown -->
+          <div class="user-profile-wrapper" style="position:relative;">
+            <div class="user-profile" id="user-profile-trigger" onclick="AppController.toggleProfileDropdown()">
+              <div style="text-align:right; margin-right:8px;" class="hide-mobile">
+                <div style="font-weight:700; font-size:0.85rem; color:#fff;" id="header-user-name">Welcome, Sohil</div>
+                <div style="font-size:0.7rem; color:var(--accent-cyan);" class="mono" id="header-user-id">User ID: sohil104</div>
+              </div>
+              <div class="avatar" id="header-user-avatar">SS</div>
+              <i data-lucide="chevron-down" style="width:14px; color:var(--text-muted); margin-left:4px;"></i>
+            </div>
+
+            <!-- Profile Dropdown Menu -->
+            <div class="profile-dropdown-menu" id="profile-dropdown">
+              <div class="dropdown-header">
+                <strong id="dropdown-user-name">Sohil Saran</strong>
+                <span id="dropdown-user-email" style="font-size:0.75rem; color:var(--text-muted); display:block;">sohil@smartusage.io</span>
+              </div>
+              <div class="dropdown-divider"></div>
+              <a href="javascript:void(0)" class="dropdown-item" onclick="AppController.openModal('user-profile-modal')">
+                <i data-lucide="user" style="width:16px;"></i> My Profile
+              </a>
+              <a href="javascript:void(0)" class="dropdown-item" onclick="AppController.showToast('🏡 Household Settings: Connected to Smart Home')">
+                <i data-lucide="home" style="width:16px;"></i> Household Settings
+              </a>
+              <a href="javascript:void(0)" class="dropdown-item" onclick="AppController.showToast('⚙️ Account Settings: Security & API active')">
+                <i data-lucide="settings" style="width:16px;"></i> Account Settings
+              </a>
+              <div class="dropdown-divider"></div>
+              <a href="javascript:void(0)" class="dropdown-item logout-item" onclick="AppController.handleLogout()">
+                <i data-lucide="log-out" style="width:16px;"></i> Logout
+              </a>
+            </div>
           </div>
         </div>
       </header>
@@ -143,6 +173,289 @@
 
       <!-- Main Dynamic Content Views -->
       <div class="content-area">
+
+        <!-- 0A. LOGIN VIEW (/login) -->
+        <section id="view-login" class="view-section">
+          <div class="auth-wrapper">
+            <div class="auth-card-3d">
+              <div class="auth-header">
+                <div class="auth-logo-badge">
+                  <i data-lucide="zap" class="text-cyan" style="width:28px; height:28px;"></i>
+                </div>
+                <h2 class="auth-title">SMART USAGE ALERT</h2>
+                <p class="auth-tagline">Detect. Predict. Alert. Save.</p>
+              </div>
+
+              <!-- Error Alert Box -->
+              <div id="login-error-alert" class="auth-alert danger" style="display:none;">
+                <i data-lucide="alert-triangle" style="width:16px;"></i>
+                <span id="login-error-msg">Invalid User ID or password. Please try again.</span>
+              </div>
+
+              <form id="login-form" onsubmit="AppController.handleLoginSubmit(event)" novalidate>
+                <div class="form-group">
+                  <label class="form-label" for="login-userid"><i data-lucide="user" style="width:14px;"></i> User ID or Email</label>
+                  <input type="text" id="login-userid" class="form-control" placeholder="Enter your User ID (e.g. sohil104) or Email" required>
+                </div>
+
+                <div class="form-group">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <label class="form-label" for="login-password" style="margin-bottom:0;"><i data-lucide="lock" style="width:14px;"></i> Password</label>
+                    <a href="javascript:void(0)" onclick="AppController.handleForgotPassword()" style="font-size:0.78rem; color:var(--accent-cyan); text-decoration:none;">Forgot Password?</a>
+                  </div>
+                  <div style="position:relative;">
+                    <input type="password" id="login-password" class="form-control" placeholder="••••••••••••" required style="padding-right:45px;">
+                    <button type="button" class="btn-toggle-pw" onclick="AppController.togglePasswordVisibility('login-password', this)">
+                      <i data-lucide="eye" style="width:16px;"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                  <label class="checkbox-container">
+                    <input type="checkbox" id="login-remember" checked>
+                    <span class="checkmark"></span>
+                    <span style="font-size:0.82rem; color:var(--text-secondary);">Remember Me</span>
+                  </label>
+                  <span class="status-pill info" style="font-size:0.7rem;"><i data-lucide="shield-check" style="width:12px;"></i> SSL Protected</span>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-auth-3d" id="login-submit-btn">
+                  <i data-lucide="log-in"></i> Sign In to Smart Home
+                </button>
+              </form>
+
+              <div class="auth-footer">
+                <span>Don't have an account?</span>
+                <a href="#register" class="auth-link" onclick="AppController.navigateTo('/register')">Create New User →</a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 0B. CREATE NEW USER VIEW (/register) -->
+        <section id="view-register" class="view-section">
+          <div class="auth-wrapper">
+            <div class="auth-card-3d" style="max-width:540px;">
+              <div class="auth-header">
+                <div class="auth-logo-badge">
+                  <i data-lucide="user-plus" class="text-cyan" style="width:28px; height:28px;"></i>
+                </div>
+                <h2 class="auth-title">Create Your Account</h2>
+                <p class="auth-tagline">Start monitoring household resources with SMART USAGE ALERT</p>
+              </div>
+
+              <!-- Error & Success Alert Banners -->
+              <div id="register-error-alert" class="auth-alert danger" style="display:none;">
+                <i data-lucide="alert-circle" style="width:16px;"></i>
+                <span id="register-error-msg">Please fix errors below.</span>
+              </div>
+              <div id="register-success-alert" class="auth-alert success" style="display:none;">
+                <i data-lucide="check-circle" style="width:16px;"></i>
+                <span id="register-success-msg">Account created successfully! Redirecting to login...</span>
+              </div>
+
+              <form id="register-form" onsubmit="AppController.handleRegisterSubmit(event)" novalidate>
+                <div class="grid-2" style="gap:14px;">
+                  <div class="form-group">
+                    <label class="form-label" for="reg-fullname"><i data-lucide="user" style="width:14px;"></i> Full Name *</label>
+                    <input type="text" id="reg-fullname" class="form-control" placeholder="e.g. Sohil Saran" required>
+                    <div class="field-error" id="err-fullname"></div>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="reg-userid"><i data-lucide="at-sign" style="width:14px;"></i> Unique User ID *</label>
+                    <input type="text" id="reg-userid" class="form-control" placeholder="e.g. sohil2026" oninput="AppController.validateUserIdDebounced()" required>
+                    <!-- User ID Uniqueness Status Feedback -->
+                    <div id="userid-status-msg" style="font-size:0.75rem; margin-top:4px; font-weight:700;"></div>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="reg-email"><i data-lucide="mail" style="width:14px;"></i> Email Address *</label>
+                  <input type="email" id="reg-email" class="form-control" placeholder="sohil@example.com" required>
+                  <div class="field-error" id="err-email"></div>
+                </div>
+
+                <div class="grid-2" style="gap:14px;">
+                  <div class="form-group">
+                    <label class="form-label" for="reg-password"><i data-lucide="lock" style="width:14px;"></i> Password *</label>
+                    <div style="position:relative;">
+                      <input type="password" id="reg-password" class="form-control" placeholder="••••••••••••" oninput="AppController.evaluatePasswordStrength(this.value)" required style="padding-right:45px;">
+                      <button type="button" class="btn-toggle-pw" onclick="AppController.togglePasswordVisibility('reg-password', this)">
+                        <i data-lucide="eye" style="width:16px;"></i>
+                      </button>
+                    </div>
+                    <!-- Password Strength Meter -->
+                    <div class="pw-meter-container" style="margin-top:6px;">
+                      <div style="display:flex; justify-content:space-between; font-size:0.72rem; margin-bottom:4px;">
+                        <span style="color:var(--text-muted);">Strength:</span>
+                        <strong id="pw-strength-label" style="color:var(--text-muted);">Too Short</strong>
+                      </div>
+                      <div class="pw-meter-track">
+                        <div id="pw-meter-fill" class="pw-meter-fill" style="width:0%;"></div>
+                      </div>
+                    </div>
+                    <div class="field-error" id="err-password"></div>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="reg-confirm-password"><i data-lucide="shield-check" style="width:14px;"></i> Confirm Password *</label>
+                    <input type="password" id="reg-confirm-password" class="form-control" placeholder="••••••••••••" required>
+                    <div class="field-error" id="err-confirm-password"></div>
+                  </div>
+                </div>
+
+                <div class="grid-2" style="gap:14px;">
+                  <div class="form-group">
+                    <label class="form-label" for="reg-household-size"><i data-lucide="users" style="width:14px;"></i> Household Size</label>
+                    <select id="reg-household-size" class="form-control">
+                      <option value="1">1 Person (Single)</option>
+                      <option value="2">2 Occupants (Couple)</option>
+                      <option value="4" selected>4 Occupants (Family)</option>
+                      <option value="6">6+ Occupants (Large Family)</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="reg-location"><i data-lucide="map-pin" style="width:14px;"></i> Eco-District Location</label>
+                    <input type="text" id="reg-location" class="form-control" value="Green Oak Eco-District" placeholder="e.g. Green Oak Eco-District">
+                  </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-auth-3d" id="register-submit-btn">
+                  <i data-lucide="user-check"></i> Create Account & Proceed
+                </button>
+              </form>
+
+              <div class="auth-footer">
+                <span>Already have an account?</span>
+                <a href="#login" class="auth-link" onclick="AppController.navigateTo('/login')">← Back to Login</a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 0C. FIRST-TIME USER ONBOARDING WIZARD (/onboarding) -->
+        <section id="view-onboarding" class="view-section">
+          <div class="auth-wrapper">
+            <div class="auth-card-3d" style="max-width:620px;">
+              <div class="auth-header">
+                <div class="auth-logo-badge">
+                  <i data-lucide="sparkles" class="text-cyan" style="width:28px; height:28px;"></i>
+                </div>
+                <h2 class="auth-title">Welcome to SMART USAGE ALERT</h2>
+                <p class="auth-tagline" id="onboarding-step-subtitle">Step 1 of 4: Setup your telemetry preferences</p>
+              </div>
+
+              <!-- Wizard Stepper Indicator -->
+              <div class="wizard-stepper">
+                <div class="wizard-step active" id="wiz-step-1">1</div>
+                <div class="wizard-step-line"></div>
+                <div class="wizard-step" id="wiz-step-2">2</div>
+                <div class="wizard-step-line"></div>
+                <div class="wizard-step" id="wiz-step-3">3</div>
+                <div class="wizard-step-line"></div>
+                <div class="wizard-step" id="wiz-step-4">4</div>
+              </div>
+
+              <!-- Wizard Step Content Cards -->
+              <div id="onboarding-cards-container">
+                <!-- Step 1: Welcome -->
+                <div class="wizard-card-page active" id="wiz-page-1">
+                  <div style="text-align:center; padding:10px 0 20px;">
+                    <div style="font-size:3rem; margin-bottom:10px;">🏠✨</div>
+                    <h3 style="font-size:1.3rem; font-weight:800; color:#fff;">Welcome, <span id="onboard-user-name">User</span>!</h3>
+                    <p style="color:var(--text-secondary); font-size:0.9rem; line-height:1.5; margin-top:8px;">
+                      SMART USAGE ALERT helps you eliminate resource wastage across Water, Electricity, LPG, and Shopping inventory through real-time IoT AI predictions.
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Step 2: Occupants -->
+                <div class="wizard-card-page" id="wiz-page-2">
+                  <h4 style="font-size:1.1rem; font-weight:700; color:#fff; margin-bottom:12px;">How many people live in your household?</h4>
+                  <div class="grid-2" style="gap:12px;">
+                    <div class="occupant-chip-box active" onclick="AppController.selectOccupantOption(1, this)">
+                      <i data-lucide="user" class="text-cyan"></i>
+                      <div><strong>1 Person</strong><span style="display:block; font-size:0.75rem; color:var(--text-muted);">Solo Studio</span></div>
+                    </div>
+                    <div class="occupant-chip-box" onclick="AppController.selectOccupantOption(2, this)">
+                      <i data-lucide="users" class="text-amber"></i>
+                      <div><strong>2 Occupants</strong><span style="display:block; font-size:0.75rem; color:var(--text-muted);">Couple / Roommates</span></div>
+                    </div>
+                    <div class="occupant-chip-box" onclick="AppController.selectOccupantOption(4, this)">
+                      <i data-lucide="home" class="text-emerald"></i>
+                      <div><strong>4 Occupants</strong><span style="display:block; font-size:0.75rem; color:var(--text-muted);">Standard Family</span></div>
+                    </div>
+                    <div class="occupant-chip-box" onclick="AppController.selectOccupantOption(6, this)">
+                      <i data-lucide="building" class="text-purple"></i>
+                      <div><strong>6+ Occupants</strong><span style="display:block; font-size:0.75rem; color:var(--text-muted);">Multi-Generational</span></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Step 3: Resources -->
+                <div class="wizard-card-page" id="wiz-page-3">
+                  <h4 style="font-size:1.1rem; font-weight:700; color:#fff; margin-bottom:12px;">Which resources do you want to monitor?</h4>
+                  <div class="grid-2" style="gap:10px;">
+                    <label class="resource-checkbox-card">
+                      <input type="checkbox" id="res-food" checked>
+                      <span><i data-lucide="apple" class="text-emerald"></i> Food & Produce</span>
+                    </label>
+                    <label class="resource-checkbox-card">
+                      <input type="checkbox" id="res-water" checked>
+                      <span><i data-lucide="droplets" class="text-cyan"></i> Water Lines</span>
+                    </label>
+                    <label class="resource-checkbox-card">
+                      <input type="checkbox" id="res-power" checked>
+                      <span><i data-lucide="zap" class="text-amber"></i> Electricity & HVAC</span>
+                    </label>
+                    <label class="resource-checkbox-card">
+                      <input type="checkbox" id="res-lpg" checked>
+                      <span><i data-lucide="flame" class="text-crimson"></i> LPG & Cooking Gas</span>
+                    </label>
+                    <label class="resource-checkbox-card" style="grid-column:1 / -1;">
+                      <input type="checkbox" id="res-shopping" checked>
+                      <span><i data-lucide="shopping-bag" class="text-purple"></i> Smart Shopping Consumables</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Step 4: Baseline Estimate -->
+                <div class="wizard-card-page" id="wiz-page-4">
+                  <h4 style="font-size:1.1rem; font-weight:700; color:#fff; margin-bottom:6px;">Basic Consumption Information</h4>
+                  <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:14px;">
+                    Enter your estimated monthly utility targets or use our recommended AI baseline values.
+                  </p>
+                  <div class="grid-2" style="gap:12px; margin-bottom:16px;">
+                    <div>
+                      <label class="form-label" style="font-size:0.8rem;">Est. Water Target (L/day)</label>
+                      <input type="number" id="onboard-water-target" class="form-control" value="180">
+                    </div>
+                    <div>
+                      <label class="form-label" style="font-size:0.8rem;">Est. Electricity Target (kWh/mo)</label>
+                      <input type="number" id="onboard-power-target" class="form-control" value="450">
+                    </div>
+                  </div>
+                  <button type="button" class="btn btn-secondary btn-sm" style="width:100%; justify-content:center;" onclick="AppController.useOnboardingDemoDefaults()">
+                    <i data-lucide="sparkles"></i> Use Estimated AI Smart Home Baseline Values
+                  </button>
+                </div>
+              </div>
+
+              <!-- Wizard Footer Action Buttons -->
+              <div style="display:flex; justify-content:space-between; margin-top:24px; pt:16px; border-top:1px solid var(--border-color);">
+                <button type="button" class="btn btn-secondary" id="wiz-prev-btn" onclick="AppController.prevOnboardingStep()" style="visibility:hidden;">
+                  ← Back
+                </button>
+                <button type="button" class="btn btn-primary" id="wiz-next-btn" onclick="AppController.nextOnboardingStep()">
+                  Next Step →
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
 
         <!-- 1. DASHBOARD VIEW -->
         <section id="view-dashboard" class="view-section active">
@@ -1076,7 +1389,49 @@
   </div>
 
 
+  <!-- 👤 USER PROFILE & HOUSEHOLD SETTINGS MODAL -->
+  <div id="user-profile-modal" class="modal-overlay">
+    <div class="modal-container modal-3d-glow" style="max-width: 520px;">
+      <div class="modal-header">
+        <h3 class="modal-title"><i data-lucide="user" class="text-cyan"></i> User Account & Household Profile</h3>
+        <button class="modal-close" onclick="AppController.closeModal('user-profile-modal')">&times;</button>
+      </div>
+
+      <div style="text-align:center; padding:16px 0; border-bottom:1px solid var(--border-color); margin-bottom:16px;">
+        <div class="avatar" style="width:64px; height:64px; font-size:1.6rem; margin:0 auto 10px;" id="modal-avatar">SS</div>
+        <h3 style="font-size:1.2rem; font-weight:800; color:#fff;" id="modal-user-name">Sohil Saran</h3>
+        <span class="status-pill info" id="modal-user-id-badge">User ID: sohil104</span>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:12px; font-size:0.88rem; margin-bottom:20px;">
+        <div style="display:flex; justify-content:space-between; padding:8px 12px; background:rgba(255,255,255,0.03); border-radius:8px;">
+          <span style="color:var(--text-muted);"><i data-lucide="mail" style="width:14px;"></i> Email:</span>
+          <strong id="modal-user-email" style="color:#fff;">sohil@smartusage.io</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between; padding:8px 12px; background:rgba(255,255,255,0.03); border-radius:8px;">
+          <span style="color:var(--text-muted);"><i data-lucide="home" style="width:14px;"></i> Connected Property:</span>
+          <strong id="modal-user-property" style="color:var(--accent-cyan);">Smart Home #104</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between; padding:8px 12px; background:rgba(255,255,255,0.03); border-radius:8px;">
+          <span style="color:var(--text-muted);"><i data-lucide="users" style="width:14px;"></i> Occupants:</span>
+          <strong id="modal-user-occupants" style="color:#fff;">4 People</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between; padding:8px 12px; background:rgba(255,255,255,0.03); border-radius:8px;">
+          <span style="color:var(--text-muted);"><i data-lucide="map-pin" style="width:14px;"></i> Eco-District:</span>
+          <strong id="modal-user-location" style="color:var(--accent-emerald);">Green Oak Eco-District</strong>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:12px; justify-content:flex-end;">
+        <button class="btn btn-secondary" onclick="AppController.closeModal('user-profile-modal')">Close</button>
+        <button class="btn btn-primary" onclick="AppController.handleLogout()"><i data-lucide="log-out"></i> Logout</button>
+      </div>
+    </div>
+  </div>
+
+
   <!-- Application Scripts -->
+  <script src="js/auth.js"></script>
   <script src="js/data.js"></script>
   <script src="js/charts.js"></script>
   <script src="js/app.js"></script>

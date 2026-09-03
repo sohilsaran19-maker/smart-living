@@ -27,11 +27,83 @@ const AppController = {
     this.bindAIChat();
     this.bindSavingsCalculator();
     this.updateWasteCalculator();
-    
-    // Initial Chart Render
-    setTimeout(() => {
-      this.renderViewCharts('dashboard');
-    }, 200);
+
+    // Check Authentication & Route Protection Guard
+    if (AuthService.isAuthenticated()) {
+      this.updateUserHeader();
+      const user = AuthService.currentUser;
+      if (!user.isOnboarded) {
+        this.navigateTo('/onboarding');
+      } else {
+        this.navigateTo('/dashboard');
+      }
+    } else {
+      this.navigateTo('/login');
+    }
+  },
+
+  // Protected Route & View Navigator
+  protectedRoutes: ['dashboard', 'water', 'electricity', 'lpg', 'inventory', 'ai', 'predictions', 'sustainability', 'community', 'reports', 'simulator'],
+
+  navigateTo: function(route) {
+    let viewTarget = route.replace('/', '').replace('#', '').trim();
+    if (!viewTarget) viewTarget = 'dashboard';
+
+    // Route Protection Guard
+    const isAuth = AuthService.isAuthenticated();
+    if (!isAuth && this.protectedRoutes.includes(viewTarget)) {
+      viewTarget = 'login';
+      this.showToast('🔐 Authentication required. Redirecting to login...');
+    } else if (isAuth && (viewTarget === 'login' || viewTarget === 'register')) {
+      const user = AuthService.currentUser;
+      viewTarget = user && !user.isOnboarded ? 'onboarding' : 'dashboard';
+    }
+
+    this.switchView(viewTarget);
+  },
+
+  switchView: function(viewTarget) {
+    const isAuth = AuthService.isAuthenticated();
+    const isAuthPage = (viewTarget === 'login' || viewTarget === 'register' || viewTarget === 'onboarding');
+
+    // Layout visibility toggle for Auth vs Protected Dashboard views
+    const sidebar = document.querySelector('sidebar');
+    const headerRight = document.querySelector('.header-right');
+    const alertTicker = document.querySelector('.alert-ticker');
+
+    if (isAuthPage) {
+      if (sidebar) sidebar.style.display = 'none';
+      if (headerRight) headerRight.style.display = 'none';
+      if (alertTicker) alertTicker.style.display = 'none';
+    } else {
+      if (sidebar) sidebar.style.display = 'flex';
+      if (headerRight) headerRight.style.display = 'flex';
+      if (alertTicker) alertTicker.style.display = 'flex';
+    }
+
+    // Active State update on Sidebar
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(nav => {
+      if (nav.getAttribute('data-view') === viewTarget) {
+        nav.classList.add('active');
+      } else {
+        nav.classList.remove('active');
+      }
+    });
+
+    // View Visibility update
+    const viewSections = document.querySelectorAll('.view-section');
+    viewSections.forEach(section => section.classList.remove('active'));
+
+    const targetSection = document.getElementById(`view-${viewTarget}`);
+    if (targetSection) {
+      targetSection.classList.add('active');
+      this.activeView = viewTarget;
+      this.renderViewCharts(viewTarget);
+      window.scrollTo(0, 0);
+    }
+
+    if (window.lucide) lucide.createIcons();
   },
 
   // Navigation Logic
@@ -40,23 +112,14 @@ const AppController = {
     navItems.forEach(item => {
       item.addEventListener('click', (e) => {
         const viewTarget = item.getAttribute('data-view');
-        if (!viewTarget) return;
-
-        // Active State update
-        navItems.forEach(nav => nav.classList.remove('active'));
-        item.classList.add('active');
-
-        // View Visibility update
-        const viewSections = document.querySelectorAll('.view-section');
-        viewSections.forEach(section => section.classList.remove('active'));
-
-        const targetSection = document.getElementById(`view-${viewTarget}`);
-        if (targetSection) {
-          targetSection.classList.add('active');
-          this.activeView = viewTarget;
-          this.renderViewCharts(viewTarget);
-        }
+        if (viewTarget) this.navigateTo(viewTarget);
       });
+    });
+
+    // Handle Hash Navigation
+    window.addEventListener('hashchange', () => {
+      const hash = window.location.hash;
+      if (hash) this.navigateTo(hash);
     });
   },
 
@@ -976,5 +1039,386 @@ I evaluated your request regarding **"${query}"** against your home telemetry.
 
     grid.insertBefore(recipeCard, grid.firstChild);
     if (window.lucide) lucide.createIcons();
+  },
+
+  // 🔑 AUTHENTICATION & LOGIN FRONTEND CONTROLLER METHODS
+  togglePasswordVisibility: function(inputId, btnEl) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    if (input.type === 'password') {
+      input.type = 'text';
+      btnEl.innerHTML = `<i data-lucide="eye-off" style="width:16px;"></i>`;
+    } else {
+      input.type = 'password';
+      btnEl.innerHTML = `<i data-lucide="eye" style="width:16px;"></i>`;
+    }
+    if (window.lucide) lucide.createIcons();
+  },
+
+  handleLoginSubmit: async function(event) {
+    event.preventDefault();
+    const userIdInput = document.getElementById('login-userid');
+    const passwordInput = document.getElementById('login-password');
+    const rememberCheckbox = document.getElementById('login-remember');
+    const errorAlert = document.getElementById('login-error-alert');
+    const errorMsg = document.getElementById('login-error-msg');
+    const submitBtn = document.getElementById('login-submit-btn');
+
+    if (!userIdInput || !passwordInput) return;
+    const query = userIdInput.value.trim();
+    const password = passwordInput.value;
+    const remember = rememberCheckbox ? rememberCheckbox.checked : false;
+
+    if (!query || !password) {
+      if (errorAlert) errorAlert.style.display = 'flex';
+      if (errorMsg) errorMsg.innerText = 'Please enter both User ID/Email and Password.';
+      return;
+    }
+
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `<i data-lucide="loader-2" class="spin"></i> Authenticating...`;
+      if (window.lucide) lucide.createIcons();
+    }
+
+    try {
+      const res = await AuthService.login(query, password, remember);
+      if (res.success) {
+        if (errorAlert) errorAlert.style.display = 'none';
+        this.updateUserHeader();
+        this.showToast(`Welcome back, ${res.user.fullName}!`);
+
+        if (!res.user.isOnboarded) {
+          this.navigateTo('/onboarding');
+        } else {
+          this.navigateTo('/dashboard');
+        }
+      } else {
+        if (errorAlert) errorAlert.style.display = 'flex';
+        if (errorMsg) errorMsg.innerText = res.message || 'Invalid User ID or password. Please try again.';
+      }
+    } catch (err) {
+      if (errorAlert) errorAlert.style.display = 'flex';
+      if (errorMsg) errorMsg.innerText = 'Unable to connect to SMART USAGE ALERT. Please try again.';
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `<i data-lucide="log-in"></i> Sign In to Smart Home`;
+        if (window.lucide) lucide.createIcons();
+      }
+    }
+  },
+
+  // 🔍 User ID Uniqueness Real-Time Validator
+  userIdTimer: null,
+  validateUserIdDebounced: function() {
+    clearTimeout(this.userIdTimer);
+    this.userIdTimer = setTimeout(async () => {
+      const input = document.getElementById('reg-userid');
+      const msgEl = document.getElementById('userid-status-msg');
+      if (!input || !msgEl) return;
+
+      const userId = input.value.trim();
+      if (!userId) {
+        msgEl.innerText = '';
+        return;
+      }
+
+      msgEl.style.color = 'var(--text-muted)';
+      msgEl.innerText = 'Checking availability...';
+
+      const res = await AuthService.checkUserIdAvailability(userId);
+      if (res.available) {
+        msgEl.style.color = '#10b981';
+        msgEl.innerText = 'User ID available ✓';
+      } else {
+        msgEl.style.color = '#ef4444';
+        msgEl.innerText = res.message;
+      }
+    }, 300);
+  },
+
+  // 📊 Live Password Strength Evaluator
+  evaluatePasswordStrength: function(pw) {
+    const meterFill = document.getElementById('pw-meter-fill');
+    const meterLabel = document.getElementById('pw-strength-label');
+    const errPassword = document.getElementById('err-password');
+    if (!meterFill || !meterLabel) return;
+
+    if (errPassword) errPassword.innerText = '';
+
+    if (!pw) {
+      meterFill.style.width = '0%';
+      meterLabel.innerText = 'Too Short';
+      meterLabel.style.color = 'var(--text-muted)';
+      return;
+    }
+
+    let score = 0;
+    if (pw.length >= 6) score += 1;
+    if (pw.length >= 10) score += 1;
+    if (/[0-9]/.test(pw)) score += 1;
+    if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) score += 1;
+    if (/[^A-Za-z0-9]/.test(pw)) score += 1;
+
+    if (score <= 2) {
+      meterFill.style.width = '33%';
+      meterFill.style.background = '#ef4444';
+      meterLabel.innerText = 'Weak';
+      meterLabel.style.color = '#ef4444';
+    } else if (score <= 4) {
+      meterFill.style.width = '66%';
+      meterFill.style.background = '#f59e0b';
+      meterLabel.innerText = 'Medium';
+      meterLabel.style.color = '#f59e0b';
+    } else {
+      meterFill.style.width = '100%';
+      meterFill.style.background = '#10b981';
+      meterLabel.innerText = 'Strong';
+      meterLabel.style.color = '#10b981';
+    }
+  },
+
+  handleRegisterSubmit: async function(event) {
+    event.preventDefault();
+    const fullNameInput = document.getElementById('reg-fullname');
+    const userIdInput = document.getElementById('reg-userid');
+    const emailInput = document.getElementById('reg-email');
+    const passwordInput = document.getElementById('reg-password');
+    const confirmPasswordInput = document.getElementById('reg-confirm-password');
+    const householdSelect = document.getElementById('reg-household-size');
+    const locationInput = document.getElementById('reg-location');
+
+    const errAlert = document.getElementById('register-error-alert');
+    const errMsg = document.getElementById('register-error-msg');
+    const successAlert = document.getElementById('register-success-alert');
+    const submitBtn = document.getElementById('register-submit-btn');
+
+    if (!fullNameInput || !userIdInput || !emailInput || !passwordInput || !confirmPasswordInput) return;
+
+    const fullName = fullNameInput.value.trim();
+    const userId = userIdInput.value.trim();
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
+    const confirmPassword = confirmPasswordInput.value;
+    const householdSize = householdSelect ? householdSelect.value : 4;
+    const location = locationInput ? locationInput.value.trim() : 'Green Oak Eco-District';
+
+    if (errAlert) errAlert.style.display = 'none';
+    if (successAlert) successAlert.style.display = 'none';
+
+    // Validations
+    if (!fullName) {
+      if (errAlert) errAlert.style.display = 'flex';
+      if (errMsg) errMsg.innerText = 'Full Name is required.';
+      return;
+    }
+    if (!userId || userId.length < 3) {
+      if (errAlert) errAlert.style.display = 'flex';
+      if (errMsg) errMsg.innerText = 'User ID must be at least 3 characters.';
+      return;
+    }
+    if (!email || !/\S+@\S+\.\S+/.test(email)) {
+      if (errAlert) errAlert.style.display = 'flex';
+      if (errMsg) errMsg.innerText = 'Please enter a valid email address.';
+      return;
+    }
+    if (!password || password.length < 6) {
+      if (errAlert) errAlert.style.display = 'flex';
+      if (errMsg) errMsg.innerText = 'Password must be at least 6 characters long.';
+      return;
+    }
+    if (password !== confirmPassword) {
+      if (errAlert) errAlert.style.display = 'flex';
+      if (errMsg) errMsg.innerText = 'Passwords do not match.';
+      return;
+    }
+
+    // Check User ID Uniqueness
+    const checkRes = await AuthService.checkUserIdAvailability(userId);
+    if (!checkRes.available) {
+      if (errAlert) errAlert.style.display = 'flex';
+      if (errMsg) errMsg.innerText = checkRes.message;
+      return;
+    }
+
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `<i data-lucide="loader-2" class="spin"></i> Creating Account...`;
+      if (window.lucide) lucide.createIcons();
+    }
+
+    try {
+      const res = await AuthService.register({
+        fullName,
+        userId,
+        email,
+        password,
+        householdSize,
+        location
+      });
+
+      if (res.success) {
+        if (successAlert) successAlert.style.display = 'flex';
+        this.showToast('✅ Account created successfully! Redirecting to login...');
+        setTimeout(() => {
+          this.navigateTo('/login');
+          // Autofill login User ID
+          const loginId = document.getElementById('login-userid');
+          if (loginId) loginId.value = userId;
+        }, 1500);
+      } else {
+        if (errAlert) errAlert.style.display = 'flex';
+        if (errMsg) errMsg.innerText = res.message || 'Registration failed. Please try again.';
+      }
+    } catch (e) {
+      if (errAlert) errAlert.style.display = 'flex';
+      if (errMsg) errMsg.innerText = 'Unable to connect to SMART USAGE ALERT. Please try again.';
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `<i data-lucide="user-check"></i> Create Account & Proceed`;
+        if (window.lucide) lucide.createIcons();
+      }
+    }
+  },
+
+  handleForgotPassword: function() {
+    this.showToast('📧 Password Reset: Enter your User ID or Email on login to receive reset instructions.');
+  },
+
+  // 🚀 First-Time User Onboarding Wizard Methods
+  currentOnboardStep: 1,
+  selectedOccupants: 4,
+
+  selectOccupantOption: function(count, element) {
+    this.selectedOccupants = count;
+    const boxes = document.querySelectorAll('.occupant-chip-box');
+    boxes.forEach(box => box.classList.remove('active'));
+    if (element) element.classList.add('active');
+  },
+
+  useOnboardingDemoDefaults: function() {
+    const waterInput = document.getElementById('onboard-water-target');
+    const powerInput = document.getElementById('onboard-power-target');
+    if (waterInput) waterInput.value = 180;
+    if (powerInput) powerInput.value = 450;
+    this.showToast('✨ Applied AI Recommended Smart Home baseline defaults!');
+  },
+
+  nextOnboardingStep: function() {
+    if (this.currentOnboardStep < 4) {
+      this.currentOnboardStep++;
+      this.updateOnboardingUI();
+    } else {
+      // Complete Onboarding
+      const user = AuthService.currentUser;
+      AuthService.completeOnboarding({
+        householdSize: this.selectedOccupants,
+        resources: ['Food', 'Water', 'Electricity', 'LPG', 'Consumables']
+      });
+      this.showToast('🎉 Setup Complete! Welcome to your SMART USAGE ALERT Dashboard.');
+      this.navigateTo('/dashboard');
+    }
+  },
+
+  prevOnboardingStep: function() {
+    if (this.currentOnboardStep > 1) {
+      this.currentOnboardStep--;
+      this.updateOnboardingUI();
+    }
+  },
+
+  updateOnboardingUI: function() {
+    const subtitle = document.getElementById('onboarding-step-subtitle');
+    const prevBtn = document.getElementById('wiz-prev-btn');
+    const nextBtn = document.getElementById('wiz-next-btn');
+    const userNameSpan = document.getElementById('onboard-user-name');
+
+    if (userNameSpan && AuthService.currentUser) {
+      userNameSpan.innerText = AuthService.currentUser.fullName || 'User';
+    }
+
+    if (subtitle) {
+      subtitle.innerText = `Step ${this.currentOnboardStep} of 4: ${
+        this.currentOnboardStep === 1 ? 'Setup telemetry preferences' :
+        this.currentOnboardStep === 2 ? 'Select occupant count' :
+        this.currentOnboardStep === 3 ? 'Choose monitored resources' : 'Set consumption targets'
+      }`;
+    }
+
+    // Stepper indicators
+    for (let i = 1; i <= 4; i++) {
+      const stepEl = document.getElementById(`wiz-step-${i}`);
+      const pageEl = document.getElementById(`wiz-page-${i}`);
+      if (stepEl) {
+        if (i <= this.currentOnboardStep) stepEl.classList.add('active');
+        else stepEl.classList.remove('active');
+      }
+      if (pageEl) {
+        if (i === this.currentOnboardStep) pageEl.classList.add('active');
+        else pageEl.classList.remove('active');
+      }
+    }
+
+    if (prevBtn) {
+      prevBtn.style.visibility = this.currentOnboardStep === 1 ? 'hidden' : 'visible';
+    }
+    if (nextBtn) {
+      nextBtn.innerText = this.currentOnboardStep === 4 ? 'Start Monitoring →' : 'Next Step →';
+    }
+  },
+
+  // 👤 User Profile Dropdown & Header Controller
+  toggleProfileDropdown: function() {
+    const menu = document.getElementById('profile-dropdown');
+    if (menu) menu.classList.toggle('active');
+  },
+
+  updateUserHeader: function() {
+    const user = AuthService.currentUser;
+    if (!user) return;
+
+    const headerName = document.getElementById('header-user-name');
+    const headerId = document.getElementById('header-user-id');
+    const headerAvatar = document.getElementById('header-user-avatar');
+
+    const dropdownName = document.getElementById('dropdown-user-name');
+    const dropdownEmail = document.getElementById('dropdown-user-email');
+
+    const modalAvatar = document.getElementById('modal-avatar');
+    const modalName = document.getElementById('modal-user-name');
+    const modalId = document.getElementById('modal-user-id-badge');
+    const modalEmail = document.getElementById('modal-user-email');
+    const modalProperty = document.getElementById('modal-user-property');
+    const modalOccupants = document.getElementById('modal-user-occupants');
+    const modalLocation = document.getElementById('modal-user-location');
+
+    const initials = user.fullName ? user.fullName.split(' ').map(n => n[0]).join('').toUpperCase() : 'SU';
+
+    if (headerName) headerName.innerText = `Welcome, ${user.fullName.split(' ')[0]}`;
+    if (headerId) headerId.innerText = `User ID: ${user.userId}`;
+    if (headerAvatar) headerAvatar.innerText = initials;
+
+    if (dropdownName) dropdownName.innerText = user.fullName;
+    if (dropdownEmail) dropdownEmail.innerText = user.email;
+
+    if (modalAvatar) modalAvatar.innerText = initials;
+    if (modalName) modalName.innerText = user.fullName;
+    if (modalId) modalId.innerText = `User ID: ${user.userId}`;
+    if (modalEmail) modalEmail.innerText = user.email;
+    if (modalProperty) modalProperty.innerText = user.householdName || 'Smart Home #104';
+    if (modalOccupants) modalOccupants.innerText = `${user.householdSize || 4} People`;
+    if (modalLocation) modalLocation.innerText = user.location || 'Green Oak Eco-District';
+  },
+
+  handleLogout: async function() {
+    const menu = document.getElementById('profile-dropdown');
+    if (menu) menu.classList.remove('active');
+    this.closeModal('user-profile-modal');
+
+    await AuthService.logout();
+    this.showToast('🚪 Logged out successfully.');
+    this.navigateTo('/login');
   }
 };

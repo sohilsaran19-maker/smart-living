@@ -1420,5 +1420,13 @@ I evaluated your request regarding **"${query}"** against your home telemetry.
     await AuthService.logout();
     this.showToast('🚪 Logged out successfully.');
     this.navigateTo('/login');
+  },
+
+  fillDemoCredentials: function(userId, password) {
+    const userIdInput = document.getElementById('login-userid');
+    const passwordInput = document.getElementById('login-password');
+    if (userIdInput) userIdInput.value = userId;
+    if (passwordInput) passwordInput.value = password;
+    this.showToast(`🔑 Loaded demo credentials for ${userId}! Click 'Sign In' to proceed.`);
   }
 };

@@ -178,6 +178,7 @@
         <section id="view-login" class="view-section">
           <div class="auth-wrapper">
             <div class="auth-card-3d">
+              <div class="auth-card-top-accent"></div>
               <div class="auth-header">
                 <div class="auth-logo-badge">
                   <i data-lucide="zap" class="text-cyan" style="width:28px; height:28px;"></i>
@@ -194,17 +195,21 @@
 
               <form id="login-form" onsubmit="AppController.handleLoginSubmit(event)" novalidate>
                 <div class="form-group">
-                  <label class="form-label" for="login-userid"><i data-lucide="user" style="width:14px;"></i> User ID or Email</label>
-                  <input type="text" id="login-userid" class="form-control" placeholder="Enter your User ID (e.g. sohil104) or Email" required>
+                  <label class="form-label" for="login-userid">User ID or Email</label>
+                  <div class="input-with-icon">
+                    <i data-lucide="user" class="input-icon"></i>
+                    <input type="text" id="login-userid" class="form-control pro-input" placeholder="Enter User ID (e.g. sohil104) or Email" required>
+                  </div>
                 </div>
 
                 <div class="form-group">
                   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                    <label class="form-label" for="login-password" style="margin-bottom:0;"><i data-lucide="lock" style="width:14px;"></i> Password</label>
-                    <a href="javascript:void(0)" onclick="AppController.handleForgotPassword()" style="font-size:0.78rem; color:var(--accent-cyan); text-decoration:none;">Forgot Password?</a>
+                    <label class="form-label" for="login-password" style="margin-bottom:0;">Password</label>
+                    <a href="javascript:void(0)" onclick="AppController.handleForgotPassword()" style="font-size:0.78rem; color:var(--accent-cyan); text-decoration:none; font-weight:600;">Forgot Password?</a>
                   </div>
-                  <div style="position:relative;">
-                    <input type="password" id="login-password" class="form-control" placeholder="••••••••••••" required style="padding-right:45px;">
+                  <div class="input-with-icon">
+                    <i data-lucide="lock" class="input-icon"></i>
+                    <input type="password" id="login-password" class="form-control pro-input" placeholder="••••••••••••" required style="padding-right:45px;">
                     <button type="button" class="btn-toggle-pw" onclick="AppController.togglePasswordVisibility('login-password', this)">
                       <i data-lucide="eye" style="width:16px;"></i>
                     </button>
@@ -215,7 +220,7 @@
                   <label class="checkbox-container">
                     <input type="checkbox" id="login-remember" checked>
                     <span class="checkmark"></span>
-                    <span style="font-size:0.82rem; color:var(--text-secondary);">Remember Me</span>
+                    <span style="font-size:0.82rem; color:var(--text-secondary); font-weight:500;">Remember Me</span>
                   </label>
                   <span class="status-pill info" style="font-size:0.7rem;"><i data-lucide="shield-check" style="width:12px;"></i> SSL Protected</span>
                 </div>
@@ -224,6 +229,13 @@
                   <i data-lucide="log-in"></i> Sign In to Smart Home
                 </button>
               </form>
+
+              <!-- Quick Demo Login Bar for Judges -->
+              <div class="demo-quick-login-bar">
+                <span style="font-size:0.72rem; color:var(--text-muted); font-weight:800; text-transform:uppercase; letter-spacing:0.5px;">Quick Demo:</span>
+                <button type="button" class="btn-chip-demo" onclick="AppController.fillDemoCredentials('sohil104', 'Password123!')">🔑 Sohil (sohil104)</button>
+                <button type="button" class="btn-chip-demo" onclick="AppController.fillDemoCredentials('alex204', 'Password123!')">🔑 Alex (alex204)</button>
+              </div>
 
               <div class="auth-footer">
                 <span>Don't have an account?</span>
@@ -237,6 +249,7 @@
         <section id="view-register" class="view-section">
           <div class="auth-wrapper">
             <div class="auth-card-3d" style="max-width:540px;">
+              <div class="auth-card-top-accent"></div>
               <div class="auth-header">
                 <div class="auth-logo-badge">
                   <i data-lucide="user-plus" class="text-cyan" style="width:28px; height:28px;"></i>
@@ -258,30 +271,40 @@
               <form id="register-form" onsubmit="AppController.handleRegisterSubmit(event)" novalidate>
                 <div class="grid-2" style="gap:14px;">
                   <div class="form-group">
-                    <label class="form-label" for="reg-fullname"><i data-lucide="user" style="width:14px;"></i> Full Name *</label>
-                    <input type="text" id="reg-fullname" class="form-control" placeholder="e.g. Sohil Saran" required>
+                    <label class="form-label" for="reg-fullname">Full Name *</label>
+                    <div class="input-with-icon">
+                      <i data-lucide="user" class="input-icon"></i>
+                      <input type="text" id="reg-fullname" class="form-control pro-input" placeholder="e.g. Sohil Saran" required>
+                    </div>
                     <div class="field-error" id="err-fullname"></div>
                   </div>
 
                   <div class="form-group">
-                    <label class="form-label" for="reg-userid"><i data-lucide="at-sign" style="width:14px;"></i> Unique User ID *</label>
-                    <input type="text" id="reg-userid" class="form-control" placeholder="e.g. sohil2026" oninput="AppController.validateUserIdDebounced()" required>
+                    <label class="form-label" for="reg-userid">Unique User ID *</label>
+                    <div class="input-with-icon">
+                      <i data-lucide="at-sign" class="input-icon"></i>
+                      <input type="text" id="reg-userid" class="form-control pro-input" placeholder="e.g. sohil2026" oninput="AppController.validateUserIdDebounced()" required>
+                    </div>
                     <!-- User ID Uniqueness Status Feedback -->
                     <div id="userid-status-msg" style="font-size:0.75rem; margin-top:4px; font-weight:700;"></div>
                   </div>
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label" for="reg-email"><i data-lucide="mail" style="width:14px;"></i> Email Address *</label>
-                  <input type="email" id="reg-email" class="form-control" placeholder="sohil@example.com" required>
+                  <label class="form-label" for="reg-email">Email Address *</label>
+                  <div class="input-with-icon">
+                    <i data-lucide="mail" class="input-icon"></i>
+                    <input type="email" id="reg-email" class="form-control pro-input" placeholder="sohil@example.com" required>
+                  </div>
                   <div class="field-error" id="err-email"></div>
                 </div>
 
                 <div class="grid-2" style="gap:14px;">
                   <div class="form-group">
-                    <label class="form-label" for="reg-password"><i data-lucide="lock" style="width:14px;"></i> Password *</label>
-                    <div style="position:relative;">
-                      <input type="password" id="reg-password" class="form-control" placeholder="••••••••••••" oninput="AppController.evaluatePasswordStrength(this.value)" required style="padding-right:45px;">
+                    <label class="form-label" for="reg-password">Password *</label>
+                    <div class="input-with-icon">
+                      <i data-lucide="lock" class="input-icon"></i>
+                      <input type="password" id="reg-password" class="form-control pro-input" placeholder="••••••••••••" oninput="AppController.evaluatePasswordStrength(this.value)" required style="padding-right:45px;">
                       <button type="button" class="btn-toggle-pw" onclick="AppController.togglePasswordVisibility('reg-password', this)">
                         <i data-lucide="eye" style="width:16px;"></i>
                       </button>
@@ -300,26 +323,35 @@
                   </div>
 
                   <div class="form-group">
-                    <label class="form-label" for="reg-confirm-password"><i data-lucide="shield-check" style="width:14px;"></i> Confirm Password *</label>
-                    <input type="password" id="reg-confirm-password" class="form-control" placeholder="••••••••••••" required>
+                    <label class="form-label" for="reg-confirm-password">Confirm Password *</label>
+                    <div class="input-with-icon">
+                      <i data-lucide="shield-check" class="input-icon"></i>
+                      <input type="password" id="reg-confirm-password" class="form-control pro-input" placeholder="••••••••••••" required>
+                    </div>
                     <div class="field-error" id="err-confirm-password"></div>
                   </div>
                 </div>
 
                 <div class="grid-2" style="gap:14px;">
                   <div class="form-group">
-                    <label class="form-label" for="reg-household-size"><i data-lucide="users" style="width:14px;"></i> Household Size</label>
-                    <select id="reg-household-size" class="form-control">
-                      <option value="1">1 Person (Single)</option>
-                      <option value="2">2 Occupants (Couple)</option>
-                      <option value="4" selected>4 Occupants (Family)</option>
-                      <option value="6">6+ Occupants (Large Family)</option>
-                    </select>
+                    <label class="form-label" for="reg-household-size">Household Size</label>
+                    <div class="input-with-icon">
+                      <i data-lucide="users" class="input-icon"></i>
+                      <select id="reg-household-size" class="form-control pro-input" style="padding-left:44px; appearance:none;">
+                        <option value="1">1 Person (Single)</option>
+                        <option value="2">2 Occupants (Couple)</option>
+                        <option value="4" selected>4 Occupants (Family)</option>
+                        <option value="6">6+ Occupants (Large Family)</option>
+                      </select>
+                    </div>
                   </div>
 
                   <div class="form-group">
-                    <label class="form-label" for="reg-location"><i data-lucide="map-pin" style="width:14px;"></i> Eco-District Location</label>
-                    <input type="text" id="reg-location" class="form-control" value="Green Oak Eco-District" placeholder="e.g. Green Oak Eco-District">
+                    <label class="form-label" for="reg-location">Eco-District Location</label>
+                    <div class="input-with-icon">
+                      <i data-lucide="map-pin" class="input-icon"></i>
+                      <input type="text" id="reg-location" class="form-control pro-input" value="Green Oak Eco-District" placeholder="e.g. Green Oak Eco-District">
+                    </div>
                   </div>
                 </div>
 

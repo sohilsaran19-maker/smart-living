@@ -17,11 +17,13 @@ while ($true) {
             continue
         }
 
-        # Drain request headers and read body if POST/PUT
+        # Drain request headers & capture headersText
         $contentLength = 0
+        $headersText = ""
         while ($true) {
             $line = $reader.ReadLine()
             if ([string]::IsNullOrEmpty($line)) { break }
+            $headersText += $line + "`n"
             if ($line.ToLower().StartsWith("content-length:")) {
                 $contentLength = [int]($line.Split(':')[1].Trim())
             }
@@ -42,6 +44,35 @@ while ($true) {
         }
 
         Write-Host "$method $rawUrl" -ForegroundColor DarkGray
+
+        # Extract Authorization header if present
+        $authHeader = ""
+        $currentAuthUser = "sohil104"
+        if ($headersText -match "(?i)Authorization:\s*Bearer\s+([^\r\n]+)") {
+            $token = $Matches[1].Trim()
+            if ($token.StartsWith("sua_jwt_token_")) {
+                $currentAuthUser = $token.Substring(14)
+            }
+        }
+        if (-not $global:userDataStore) { $global:userDataStore = @{} }
+        if (-not $global:userDataStore.ContainsKey($currentAuthUser)) {
+            $global:userDataStore[$currentAuthUser] = @{
+                inventory = @(
+                    @{ id=1; food_name="Organic Whole Milk"; quantity=2.0; unit="Liters"; status="Fresh"; waste_risk="Fresh" },
+                    @{ id=2; food_name="Fresh Tomatoes"; quantity=1.8; unit="kg"; status="Expiring"; waste_risk="High" },
+                    @{ id=3; food_name="Whole Grain Bread"; quantity=1.0; unit="pack"; status="Use Soon"; waste_risk="Medium" }
+                );
+                water_usage = 175.0;
+                electricity_usage = 11.0;
+                lpg_level = 25;
+                alerts = @(
+                    @{ title="High Electricity Consumption Detected"; severity="High"; message="37.5 percent above baseline (AC overuse)" },
+                    @{ title="Water Leakage Risk Alert"; severity="Critical"; message="Garden Valve 2 leak detected" }
+                );
+                chat_history = @()
+            }
+        }
+        $uStore = $global:userDataStore[$currentAuthUser]
 
         # REST API HANDLERS (/api/*)
         if ($url.StartsWith("/api/")) {
@@ -122,6 +153,16 @@ while ($true) {
                             }
                             $global:registeredUsers += $newUserObj
                             $reqUser = $newUserObj
+
+                            # Initialize fresh isolated user data store
+                            $global:userDataStore[$userId] = @{
+                                inventory = @();
+                                water_usage = 110.0;
+                                electricity_usage = 6.5;
+                                lpg_level = 90;
+                                alerts = @();
+                                chat_history = @()
+                            }
                         }
                     } catch {
                         $regSuccess = $false
@@ -157,27 +198,45 @@ while ($true) {
                     $isOnboardedStr = if ($matchedUser.isOnboarded) { "true" } else { "false" }
                     $jsonString = '{"success":true,"message":"Logged in successfully!","token":"sua_jwt_token_' + $matchedUser.userId + '","user":{"id":' + $matchedUser.id + ',"userId":"' + $matchedUser.userId + '","fullName":"' + $matchedUser.fullName + '","email":"' + $matchedUser.email + '","householdSize":' + $matchedUser.householdSize + ',"location":"' + $matchedUser.location + '","isOnboarded":' + $isOnboardedStr + '}}'
                 } elseif (($loginQuery.ToLower() -eq "sohil104" -or $loginQuery.ToLower() -eq "sohil@smartusage.io") -and $loginPw -eq "Password123!") {
-                    $jsonString = '{"success":true,"message":"Logged in successfully!","token":"sua_demo_jwt_token_2026","user":{"id":1,"userId":"sohil104","fullName":"Sohil Saran","email":"sohil@smartusage.io","householdSize":4,"location":"Green Oak Eco-District","isOnboarded":true}}'
+                    $jsonString = '{"success":true,"message":"Logged in successfully!","token":"sua_jwt_token_sohil104","user":{"id":1,"userId":"sohil104","fullName":"Sohil Saran","email":"sohil@smartusage.io","householdSize":4,"location":"Green Oak Eco-District","isOnboarded":true}}'
                 } elseif (($loginQuery.ToLower() -eq "alex204" -or $loginQuery.ToLower() -eq "alex@smartusage.io") -and $loginPw -eq "Password123!") {
-                    $jsonString = '{"success":true,"message":"Logged in successfully!","token":"sua_demo_jwt_token_2026","user":{"id":2,"userId":"alex204","fullName":"Alex Rivera","email":"alex@smartusage.io","householdSize":2,"location":"Green Oak Eco-District","isOnboarded":true}}'
+                    $jsonString = '{"success":true,"message":"Logged in successfully!","token":"sua_jwt_token_alex204","user":{"id":2,"userId":"alex204","fullName":"Alex Rivera","email":"alex@smartusage.io","householdSize":2,"location":"Green Oak Eco-District","isOnboarded":true}}'
                 } else {
                     $jsonString = '{"success":false,"error":"Invalid User ID or password. Please try again.","message":"Invalid User ID or password. Please try again."}'
                 }
             }
             elseif ($url -eq "/api/auth/me") {
-                $jsonString = '{"success":true,"user":{"id":1,"userId":"sohil104","fullName":"Sohil Saran","email":"sohil@smartusage.io","householdSize":4,"location":"Green Oak Eco-District","isOnboarded":true}}'
+                $jsonString = '{"success":true,"user":{"id":1,"userId":"' + $currentAuthUser + '","fullName":"' + $currentAuthUser + '","email":"' + $currentAuthUser + '@smartusage.io","householdSize":4,"location":"Green Oak Eco-District","isOnboarded":true}}'
             }
             elseif ($url -eq "/api/auth/logout") {
                 $jsonString = '{"success":true,"message":"Logged out successfully"}'
             }
             elseif ($url -eq "/api/dashboard") {
-                $jsonString = '{"success":true,"data":{"sustainability_score":88,"food_waste_risk_count":1,"daily_water_usage":{"current":175,"normal":140,"pct_change":"+25.0%","unit":"L/day"},"electricity_usage":{"current":11.0,"normal":8.0,"pct_change":"+37.5%","unit":"kWh/day"},"lpg_level":{"percentage":25,"days_remaining":4,"status":"Low Warning"},"active_alerts":[{"title":"High Electricity Consumption Detected","severity":"High","message":"37.5 percent above baseline (AC overuse)"},{"title":"Water Leakage Risk Alert","severity":"Critical","message":"Garden Valve 2 leak detected"}],"savings":{"money_saved":1850,"water_saved":450,"electricity_saved":38,"food_saved":2.4,"CO2_avoided":14.5}}}'
+                $waterVal = $uStore.water_usage
+                $powerVal = $uStore.electricity_usage
+                $lpgVal = $uStore.lpg_level
+                $invCount = $uStore.inventory.Count
+                $jsonString = '{"success":true,"data":{"user_id":"' + $currentAuthUser + '","sustainability_score":88,"food_waste_risk_count":' + $invCount + ',"daily_water_usage":{"current":' + $waterVal + ',"normal":140,"pct_change":"+25.0%","unit":"L/day"},"electricity_usage":{"current":' + $powerVal + ',"normal":8.0,"pct_change":"+37.5%","unit":"kWh/day"},"lpg_level":{"percentage":' + $lpgVal + ',"days_remaining":4,"status":"Low Warning"},"active_alerts":[{"title":"High Electricity Consumption Detected","severity":"High","message":"37.5 percent above baseline (AC overuse)"}],"savings":{"money_saved":1850,"water_saved":450,"electricity_saved":38,"food_saved":2.4,"CO2_avoided":14.5}}}'
             }
             elseif ($url -eq "/api/resources") {
-                $jsonString = '{"success":true,"data":[{"id":1,"resource_type":"Electricity","name":"Electricity Grid","current_usage":11.0,"normal_usage":8.0,"unit":"kWh/day"},{"id":2,"resource_type":"Water","name":"Main Water Line","current_usage":175.0,"normal_usage":140.0,"unit":"L/day"},{"id":3,"resource_type":"LPG","name":"LPG Cylinder","current_usage":25.0,"normal_usage":100.0,"unit":"%"}]}'
+                $jsonString = '{"success":true,"data":[{"id":1,"resource_type":"Electricity","name":"Electricity Grid","current_usage":' + $uStore.electricity_usage + ',"normal_usage":8.0,"unit":"kWh/day"},{"id":2,"resource_type":"Water","name":"Main Water Line","current_usage":' + $uStore.water_usage + ',"normal_usage":140.0,"unit":"L/day"},{"id":3,"resource_type":"LPG","name":"LPG Cylinder","current_usage":' + $uStore.lpg_level + ',"normal_usage":100.0,"unit":"%"}]}'
             }
             elseif ($url -eq "/api/inventory") {
-                $jsonString = '{"success":true,"data":[{"id":1,"food_name":"Organic Whole Milk","quantity":2.0,"unit":"Liters","status":"Fresh","waste_risk":"Fresh"},{"id":2,"food_name":"Fresh Tomatoes","quantity":1.8,"unit":"kg","status":"Expiring","waste_risk":"High"},{"id":3,"food_name":"Whole Grain Bread","quantity":1.0,"unit":"pack","status":"Use Soon","waste_risk":"Medium"}]}'
+                if ($method -eq "POST" -and $bodyText -ne "") {
+                    $newItemName = "New Item"
+                    if ($bodyText -match '"food_name"\s*:\s*"([^"]*)"') { $newItemName = $Matches[1] }
+                    elseif ($bodyText -match '"name"\s*:\s*"([^"]*)"') { $newItemName = $Matches[1] }
+                    $newItem = @{ id=($uStore.inventory.Count + 1); food_name=$newItemName; quantity=1.0; unit="pack"; status="Fresh"; waste_risk="Low" }
+                    $uStore.inventory += $newItem
+                }
+                
+                # Build JSON array of user's inventory
+                $invItems = @()
+                foreach ($item in $uStore.inventory) {
+                    $invItems += '{"id":' + $item.id + ',"food_name":"' + $item.food_name + '","quantity":' + $item.quantity + ',"unit":"' + $item.unit + '","status":"' + $item.status + '","waste_risk":"' + $item.waste_risk + '"}'
+                }
+                $invJson = "[" + ($invItems -join ",") + "]"
+                $jsonString = '{"success":true,"user_id":"' + $currentAuthUser + '","data":' + $invJson + '}'
             }
             elseif ($url -eq "/api/predictions") {
                 $jsonString = '{"success":true,"data":[{"resource_type":"Electricity","prediction_type":"Excess Usage","prediction_message":"Electricity usage is 37.5 percent higher than normal (11.0 kWh/day).","confidence":0.92,"recommended_action":"Set AC thermostat to 24C."},{"resource_type":"Water","prediction_type":"Anomaly","prediction_message":"Water consumption spiked by 30.8 percent. Possible Garden Valve leak.","confidence":0.89,"recommended_action":"Shut off Garden Valve 2."},{"resource_type":"LPG","prediction_type":"Depletion","prediction_message":"LPG at 25 percent. Will run out in 4 days.","confidence":0.95,"recommended_action":"Book replacement LPG cylinder."},{"resource_type":"Food","prediction_type":"Waste","prediction_message":"Fresh Tomatoes (1.8 kg) expire in 2 days.","confidence":0.94,"recommended_action":"Cook Veggie Medley Stir-Fry."}]}'

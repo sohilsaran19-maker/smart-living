@@ -171,27 +171,34 @@ const AuthService = {
   // 🔑 Login User (POST /api/auth/login)
   login: async function(userIdOrEmail, password, rememberMe = false) {
     const query = (userIdOrEmail || '').trim().toLowerCase();
+    let networkFailed = false;
 
     // Try Backend API First
     try {
       const response = await fetch(`${this.API_BASE_URL}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userIdOrEmail: query, password, rememberMe })
+        body: JSON.stringify({ query: query, userIdOrEmail: query, password, rememberMe })
       });
-      if (response.ok) {
-        const result = await response.json();
+
+      const result = await response.json().catch(() => null);
+
+      if (response.ok && result && result.success) {
         this.currentUser = result.user;
         const storage = rememberMe ? localStorage : sessionStorage;
         storage.setItem(this.STORAGE_KEY_SESSION, JSON.stringify(result.user));
         if (result.token) localStorage.setItem(this.STORAGE_KEY_TOKEN, result.token);
         return { success: true, user: result.user };
-      } else if (response.status === 401 || response.status === 404) {
-        const err = await response.json();
-        return { success: false, message: err.message || 'Invalid User ID or password. Please try again.' };
+      } else if (response.status === 401 || response.status === 400) {
+        const errorMsg = (result && (result.error || result.message)) ? (result.error || result.message) : 'Invalid User ID or password. Please try again.';
+        return { success: false, message: errorMsg };
+      } else if (response.status >= 500) {
+        return { success: false, message: 'SMART USAGE ALERT is temporarily unavailable. Please try again.' };
+      } else if (result && (result.error || result.message)) {
+        return { success: false, message: result.error || result.message };
       }
     } catch (e) {
-      // Backend offline, fallback to local store lookup
+      networkFailed = true;
     }
 
     // Local Fallback Authentication
@@ -201,11 +208,14 @@ const AuthService = {
     );
 
     if (!matchedUser) {
-      return { success: false, message: 'No account found with these credentials.' };
+      if (networkFailed) {
+        return { success: false, message: 'Unable to connect to SMART USAGE ALERT. Please try again.' };
+      }
+      return { success: false, message: 'Invalid User ID or password.' };
     }
 
     if (matchedUser.password !== password) {
-      return { success: false, message: 'Invalid User ID or password. Please try again.' };
+      return { success: false, message: 'Invalid User ID or password.' };
     }
 
     // Store Session

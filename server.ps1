@@ -17,19 +17,53 @@ while ($true) {
             continue
         }
 
+        # Drain request headers and read body if POST/PUT
+        $contentLength = 0
+        while ($true) {
+            $line = $reader.ReadLine()
+            if ([string]::IsNullOrEmpty($line)) { break }
+            if ($line.ToLower().StartsWith("content-length:")) {
+                $contentLength = [int]($line.Split(':')[1].Trim())
+            }
+        }
+        $bodyText = ""
+        if ($contentLength -gt 0) {
+            $bodyBuffer = New-Object char[] $contentLength
+            $reader.ReadBlock($bodyBuffer, 0, $contentLength) | Out-Null
+            $bodyText = [string]::new($bodyBuffer)
+        }
+
         $parts = $requestLine.Split(' ')
+        $method = $parts[0]
         $rawUrl = $parts[1]
         $url = $rawUrl
         if ($rawUrl.Contains('?')) {
             $url = $rawUrl.Substring(0, $rawUrl.IndexOf('?'))
         }
 
+        Write-Host "$method $rawUrl" -ForegroundColor DarkGray
+
         # REST API HANDLERS (/api/*)
         if ($url.StartsWith("/api/")) {
             $jsonString = "{}"
 
             if ($url -eq "/api/health") {
-                $jsonString = '{"status":"online","system":"SMART USAGE ALERT REST API","version":"1.0.0"}'
+                $jsonString = '{"success":true,"message":"SMART USAGE ALERT backend is running"}'
+            }
+            elseif ($url -eq "/api/auth/login") {
+                $jsonString = '{"success":true,"message":"Logged in successfully!","token":"sua_demo_jwt_token_2026","user":{"id":1,"userId":"sohil104","fullName":"Sohil Saran","email":"sohil@smartusage.io","householdSize":4,"location":"Green Oak Eco-District","isOnboarded":true}}'
+            }
+            elseif ($url -eq "/api/auth/register") {
+                $jsonString = '{"success":true,"message":"Account created successfully!","token":"sua_demo_jwt_token_2026","user":{"id":2,"userId":"newuser","fullName":"New User","email":"newuser@smartusage.io","householdSize":4,"location":"Green Oak Eco-District","isOnboarded":false}}'
+            }
+            elseif ($url -eq "/api/auth/check-userid") {
+                $jsonString = '{"success":true,"available":true,"message":"User ID available"}'
+            }
+            elseif ($url -eq "/api/auth/me") {
+                $jsonString = '{"success":true,"user":{"id":1,"userId":"sohil104","fullName":"Sohil Saran","email":"sohil@smartusage.io","householdSize":4,"location":"Green Oak Eco-District","isOnboarded":true}}'
+            }
+            elseif ($url -eq "/api/auth/logout") {
+                $jsonString = '{"success":true,"message":"Logged out successfully"}'
             }
             elseif ($url -eq "/api/dashboard") {
                 $jsonString = '{"success":true,"data":{"sustainability_score":88,"food_waste_risk_count":1,"daily_water_usage":{"current":175,"normal":140,"pct_change":"+25.0%","unit":"L/day"},"electricity_usage":{"current":11.0,"normal":8.0,"pct_change":"+37.5%","unit":"kWh/day"},"lpg_level":{"percentage":25,"days_remaining":4,"status":"Low Warning"},"active_alerts":[{"title":"High Electricity Consumption Detected","severity":"High","message":"37.5 percent above baseline (AC overuse)"},{"title":"Water Leakage Risk Alert","severity":"Critical","message":"Garden Valve 2 leak detected"}],"savings":{"money_saved":1850,"water_saved":450,"electricity_saved":38,"food_saved":2.4,"CO2_avoided":14.5}}}'
@@ -55,8 +89,42 @@ while ($true) {
             elseif ($url -eq "/api/simulator") {
                 $jsonString = '{"success":true,"estimated_monthly_impact":{"electricity_saved_kwh":12.6,"water_saved_liters":210,"food_saved_kg":0.75,"money_saved_rupees":1850,"formatted_money_saved":"Rs. 1,850","co2_avoided_kg":14.5,"new_sustainability_score":94}}'
             }
+            elseif ($url -eq "/api/sustainability") {
+                $jsonString = '{"success":true,"data":{"score":88,"food_score":92,"water_score":85,"energy_score":84,"waste_score":90}}'
+            }
             elseif ($url -eq "/api/assistant") {
-                $jsonString = '{"success":true,"reply":"SMART USAGE ALERT AI Assistant:\n\nYour household telemetry:\n- Electricity: 11.0 kWh/day (37.5 percent high due to AC overuse)\n- Water: 175 L/day (25 percent high due to Garden Valve leak)\n- LPG Reserve: 25 percent (depletion in ~4 days)\n\nGrok Action Tip: Adjusting AC to 24C and shutting off Garden Valve 2 saves Rs. 1,850/month and 14.5 kg CO2!"}'
+                # Dynamic AI Assistant - parse user query from POST body
+                $userMsg = "general"
+                if ($bodyText -ne "") {
+                    try {
+                        if ($bodyText -match '"message"\s*:\s*"([^"]*)"') {
+                            $userMsg = $Matches[1].ToLower()
+                        }
+                    } catch {}
+                }
+
+                # Context-aware response routing
+                if ($userMsg -match "electric|power|bill|kwh|ac|air.condition") {
+                    $reply = "Grok AI Electricity Analysis:\n\nYour current electricity consumption is 11.0 kWh/day, which is 37.5% above your baseline of 8.0 kWh/day.\n\nRoot Cause Breakdown:\n- Air Conditioner: 72% contribution (10.1 kWh/day, 7.2 hrs runtime)\n- Water Heater: 18% contribution (3.0 kWh/day)\n- Refrigerator: 10% contribution (2.4 kWh/day)\n\nActionable Recommendations:\n1. Set AC thermostat to 24C instead of 20C (saves Rs. 720/month)\n2. Run washing machine after 9 PM (off-peak rates)\n3. Disable standby power on entertainment systems\n\nEstimated Monthly Savings: Rs. 1,850"
+                }
+                elseif ($userMsg -match "water|leak|valve|liters|consumption|spike") {
+                    $reply = "Grok AI Water Diagnostic:\n\nYour water consumption is 175 L/day, which is 25% above your baseline of 140 L/day.\n\nAnomaly Detected:\n- Garden Valve #2 shows continuous 0.4 L/min micro-stream\n- 89% probability of a sticky flapper valve or unclosed bidet spray\n- Spike window: 08:15 AM - 10:45 AM\n\nRecommended Action:\n1. Shut off Garden Valve #2 immediately\n2. Run 10-second Water Leak Diagnostic Test\n3. Schedule plumber inspection within 48 hours\n\nEstimated Water Savings: 450 Liters/month (Rs. 158/month)"
+                }
+                elseif ($userMsg -match "lpg|gas|cylinder|flame|cook") {
+                    $reply = "Grok AI LPG Analysis:\n\nYour LPG cylinder is at 25% capacity. Estimated depletion in approximately 4 days.\n\nEfficiency Tips:\n1. Match flame size to pot size (saves 18% gas)\n2. Use pressure cookers for pulses and stews (saves 40%)\n3. Clean burner ports for efficient blue flames\n4. Cover pots while cooking to retain heat\n\nAction Required: Book replacement LPG cylinder now to avoid interruption.\n\nEstimated Extension: From 4 days to 6 days with optimization"
+                }
+                elseif ($userMsg -match "shop|buy|grocery|item|need|cart") {
+                    $reply = "Grok Smart Shopping Assistant:\n\nNEED NOW (Action Required Today):\n1. LPG Gas Cylinder Refill - Critical (25% remaining)\n2. Fresh Tomatoes - High (expiring in 2 days)\n\nNEED SOON (Buy in 5-7 Days):\n- Whole Milk (running low)\n- Whole Grain Bread (running low)\n\nDON'T BUY YET (Well Stocked):\n- Brown Rice (88% full)\n- Olive Oil (75% full)\n\nEstimated Smart Cart Total: Rs. 450\nPotential Waste Prevention: Rs. 560/month"
+                }
+                elseif ($userMsg -match "save|money|waste|budget|cost|rupee") {
+                    $reply = "Grok AI Savings Calculator:\n\nYour Monthly Waste-to-Money Breakdown:\n- Unnecessary Electricity: Rs. 720 (AC overuse)\n- Wasted Water: Rs. 158 (Garden Valve leak)\n- Food Wastage Risk: Rs. 560 (Tomatoes expiring)\n- Excess LPG: Rs. 412 (inefficient cooking)\n\nTotal Monthly Waste: Rs. 1,850\nPotential Monthly Savings: Rs. 1,850\nAnnual Projection: Rs. 22,200\nCO2 Avoided: 14.5 kg/month (174 kg/year)\n\nSustainability Score Impact: 78 -> 94 (+16 points)"
+                }
+                else {
+                    $reply = "Grok AI Resource Strategy:\n\nI analyzed your household telemetry for your query.\n\nCurrent Status:\n- Electricity: 11.0 kWh/day (37.5% above baseline - AC overuse detected)\n- Water: 175 L/day (25% above normal - Garden Valve leak active)\n- LPG Reserve: 25% (depletion in approximately 4 days)\n- Food Risk: Fresh Tomatoes expiring in 2 days\n\nTop Priority Actions:\n1. Shut off Garden Valve #2 (saves Rs. 158/month)\n2. Set AC to 24C (saves Rs. 720/month)\n3. Book LPG refill (avoid cooking interruption)\n4. Cook tomato-based recipes today (prevent waste)\n\nTotal Potential Savings: Rs. 1,850/month and 14.5 kg CO2 avoided!"
+                }
+
+                $replyEscaped = $reply.Replace('\', '\\').Replace('"', '\"')
+                $jsonString = '{"success":true,"reply":"' + $replyEscaped + '"}'
             }
             elseif ($url -eq "/api/benchmark") {
                 $jsonString = '{"success":true,"benchmark_group":"Simulated 4-Person Eco-District Households","metrics":{"water":{"your_household":"175 L/day","neighborhood_avg":"140 L/day","comparison":"+25.0 percent Higher"},"electricity":{"your_household":"11.0 kWh/day","neighborhood_avg":"8.0 kWh/day","comparison":"+37.5 percent Higher"},"food_waste":{"your_household":"0.4 kg/week","neighborhood_avg":"1.2 kg/week","comparison":"66.7 percent Lower (Top Eco Performer)"}}}'
@@ -69,7 +137,7 @@ while ($true) {
             }
 
             $bytes = [System.Text.Encoding]::UTF8.GetBytes($jsonString)
-            $header = "HTTP/1.1 200 OK`r`nContent-Type: application/json; charset=utf-8`r`nContent-Length: $($bytes.Length)`r`nAccess-Control-Allow-Origin: *`r`nConnection: close`r`n`r`n"
+            $header = "HTTP/1.1 200 OK`r`nContent-Type: application/json; charset=utf-8`r`nContent-Length: $($bytes.Length)`r`nAccess-Control-Allow-Origin: *`r`nAccess-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS`r`nAccess-Control-Allow-Headers: Content-Type, Authorization`r`nConnection: close`r`n`r`n"
             $headerBytes = [System.Text.Encoding]::UTF8.GetBytes($header)
             $stream.Write($headerBytes, 0, $headerBytes.Length)
             $stream.Write($bytes, 0, $bytes.Length)
@@ -85,10 +153,15 @@ while ($true) {
         if (Test-Path $localPath -PathType Leaf) {
             $bytes = [System.IO.File]::ReadAllBytes($localPath)
             $mime = "text/plain"
-            if ($localPath.EndsWith(".html")) { $mime = "text/html" }
-            elseif ($localPath.EndsWith(".css")) { $mime = "text/css" }
-            elseif ($localPath.EndsWith(".js")) { $mime = "application/javascript" }
+            if ($localPath.EndsWith(".html")) { $mime = "text/html; charset=utf-8" }
+            elseif ($localPath.EndsWith(".css")) { $mime = "text/css; charset=utf-8" }
+            elseif ($localPath.EndsWith(".js")) { $mime = "application/javascript; charset=utf-8" }
             elseif ($localPath.EndsWith(".png")) { $mime = "image/png" }
+            elseif ($localPath.EndsWith(".jpg") -or $localPath.EndsWith(".jpeg")) { $mime = "image/jpeg" }
+            elseif ($localPath.EndsWith(".svg")) { $mime = "image/svg+xml" }
+            elseif ($localPath.EndsWith(".ico")) { $mime = "image/x-icon" }
+            elseif ($localPath.EndsWith(".json")) { $mime = "application/json" }
+            elseif ($localPath.EndsWith(".woff2")) { $mime = "font/woff2" }
 
             $header = "HTTP/1.1 200 OK`r`nContent-Type: $mime`r`nContent-Length: $($bytes.Length)`r`nAccess-Control-Allow-Origin: *`r`nConnection: close`r`n`r`n"
             $headerBytes = [System.Text.Encoding]::UTF8.GetBytes($header)
@@ -102,6 +175,6 @@ while ($true) {
         $stream.Flush()
         $client.Close()
     } catch {
-        # continue loop
+        Write-Host "Error: $($_.Exception.Message)" -ForegroundColor Red
     }
 }

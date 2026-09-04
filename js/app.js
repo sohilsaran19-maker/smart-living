@@ -100,10 +100,98 @@ const AppController = {
       targetSection.classList.add('active');
       this.activeView = viewTarget;
       this.renderViewCharts(viewTarget);
+      if (isAuth && (viewTarget === 'dashboard' || viewTarget === 'inventory' || viewTarget === 'water' || viewTarget === 'electricity' || viewTarget === 'lpg')) {
+        this.fetchBackendTelemetry();
+      }
       window.scrollTo(0, 0);
     }
 
     if (window.lucide) lucide.createIcons();
+  },
+
+  // Centralized Backend Telemetry Fetch & Dashboard Update
+  fetchBackendTelemetry: async function() {
+    try {
+      const res = await ApiService.getDashboardData();
+      if (res && res.success && res.data) {
+        const d = res.data;
+
+        // 1. Sustainability Score
+        const scoreEl = document.getElementById('dash-sustainability-score');
+        if (scoreEl) scoreEl.innerText = d.sustainability_score || 88;
+
+        // 2. Food Waste Risk Count
+        const foodRiskEl = document.getElementById('dash-food-risk-count');
+        if (foodRiskEl) foodRiskEl.innerText = `${d.food_waste_risk_count || 0} Risk Items`;
+
+        // 3. Water Consumption
+        const waterValEl = document.getElementById('dash-water-val');
+        if (waterValEl && d.daily_water_usage) waterValEl.innerText = `${d.daily_water_usage.current} ${d.daily_water_usage.unit}`;
+
+        // 4. Electricity Consumption
+        const powerValEl = document.getElementById('dash-power-val');
+        if (powerValEl && d.electricity_usage) powerValEl.innerText = `${d.electricity_usage.current} ${d.electricity_usage.unit}`;
+
+        // 5. LPG Status
+        const lpgValEl = document.getElementById('dash-lpg-val');
+        if (lpgValEl && d.lpg_level) lpgValEl.innerText = `${d.lpg_level.percentage}%`;
+
+        // 8. Money Saved & 9. CO2 Avoided
+        const moneyEl = document.getElementById('dash-money-saved');
+        if (moneyEl && d.savings) moneyEl.innerText = `Rs. ${d.savings.money_saved}`;
+
+        const co2El = document.getElementById('dash-co2-avoided');
+        if (co2El && d.savings) co2El.innerText = `${d.savings.CO2_avoided} kg`;
+      }
+
+      // Fetch Inventory for user
+      const invRes = await ApiService.getInventory();
+      if (invRes && invRes.success && Array.isArray(invRes.data)) {
+        this.userInventory = invRes.data;
+        this.renderUserInventory(invRes.data);
+      }
+    } catch (e) {
+      console.warn('Dashboard telemetry sync note:', e);
+    }
+  },
+
+  renderUserInventory: function(items) {
+    const container = document.getElementById('inventory-list');
+    if (!container) return;
+
+    if (!items || items.length === 0) {
+      container.innerHTML = `
+        <div class="glass-card" style="grid-column: 1 / -1; text-align:center; padding: 40px;">
+          <i data-lucide="info" class="text-cyan" style="width:48px; height:48px; margin-bottom:12px;"></i>
+          <h3 style="font-size:1.1rem; color:var(--text-primary);">Start adding your household resources to begin monitoring.</h3>
+          <button class="btn btn-primary btn-sm" style="margin-top:14px;" onclick="AppController.loadDemoDataSample()">
+            <i data-lucide="database"></i> Load Demo Data
+          </button>
+        </div>
+      `;
+      if (window.lucide) lucide.createIcons();
+      return;
+    }
+
+    container.innerHTML = items.map(item => `
+      <div class="glass-card" style="padding: 16px; border: 1px solid var(--border-color);">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div style="font-weight:700; font-size:0.95rem;">${item.food_name}</div>
+          <span class="status-pill ${item.waste_risk === 'High' ? 'lvl-red' : 'lvl-green'}">${item.status}</span>
+        </div>
+        <div style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">
+          Quantity: <strong>${item.quantity} ${item.unit}</strong>
+        </div>
+      </div>
+    `).join('');
+    if (window.lucide) lucide.createIcons();
+  },
+
+  loadDemoDataSample: async function() {
+    this.showToast('⏳ Seeding demo sample telemetry data via backend...');
+    await ApiService.loadDemoData();
+    await this.fetchBackendTelemetry();
+    this.showToast('✅ Sample telemetry data loaded successfully!');
   },
 
   // Navigation Logic

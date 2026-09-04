@@ -57,22 +57,131 @@ while ($true) {
         if (-not $global:userDataStore) { $global:userDataStore = @{} }
         if (-not $global:userDataStore.ContainsKey($currentAuthUser)) {
             $global:userDataStore[$currentAuthUser] = @{
-                inventory = @(
-                    @{ id=1; food_name="Organic Whole Milk"; quantity=2.0; unit="Liters"; status="Fresh"; waste_risk="Fresh" },
-                    @{ id=2; food_name="Fresh Tomatoes"; quantity=1.8; unit="kg"; status="Expiring"; waste_risk="High" },
-                    @{ id=3; food_name="Whole Grain Bread"; quantity=1.0; unit="pack"; status="Use Soon"; waste_risk="Medium" }
+                water = @{
+                    daily_usage = 450.0;
+                    normal_usage = 450.0;
+                    household_size = 4;
+                    water_source = "Municipal Pipe";
+                    category = "Bathing & Cleaning";
+                    history = @(440, 450, 460, 450, 455, 448, 450)
+                };
+                electricity = @{
+                    normal_usage = 10.0;
+                    history = @(9.5, 10.0, 9.8, 10.2, 9.9, 10.1, 10.0);
+                    appliances = @(
+                        @{ id=1; name="Air Conditioner"; watts=1500; hours_per_day=6; days_per_month=30 },
+                        @{ id=2; name="Refrigerator"; watts=200; hours_per_day=24; days_per_month=30 }
+                    )
+                };
+                lpg = @{
+                    capacity_kg = 14.2;
+                    current_percent = 85.0;
+                    daily_consumption_pct = 2.5;
+                };
+                consumables = @(
+                    @{ id=1; name="Detergent Powder"; quantity=2.0; unit="kg"; min_quantity=0.5; daily_usage=0.1 },
+                    @{ id=2; name="Dishwashing Soap"; quantity=1.0; unit="liter"; min_quantity=0.2; daily_usage=0.05 }
                 );
-                water_usage = 175.0;
-                electricity_usage = 11.0;
-                lpg_level = 25;
-                alerts = @(
-                    @{ title="High Electricity Consumption Detected"; severity="High"; message="37.5 percent above baseline (AC overuse)" },
-                    @{ title="Water Leakage Risk Alert"; severity="Critical"; message="Garden Valve 2 leak detected" }
-                );
-                chat_history = @()
+                has_custom_data = $false
             }
         }
         $uStore = $global:userDataStore[$currentAuthUser]
+
+        # Dynamic Metrics Calculation Engine
+        # 1. Water calculations
+        $wDaily = $uStore.water.daily_usage
+        $wNormal = $uStore.water.normal_usage
+        $wWeekly = $wDaily * 7
+        $wMonthly = $wDaily * 30
+        $wPerPerson = if ($uStore.water.household_size -gt 0) { [math]::Round($wDaily / $uStore.water.household_size, 1) } else { $wDaily }
+        $wPctDiff = if ($wNormal -gt 0) { [math]::Round((($wDaily - $wNormal) / $wNormal) * 100, 1) } else { 0 }
+        
+        $wSeverity = "NORMAL"
+        if ($wPctDiff -gt 50) { $wSeverity = "CRITICAL" }
+        elseif ($wPctDiff -gt 25) { $wSeverity = "HIGH" }
+        elseif ($wPctDiff -gt 10) { $wSeverity = "SLIGHTLY HIGH" }
+
+        # 2. Electricity calculations
+        $eDailykWh = 0.0
+        foreach ($app in $uStore.electricity.appliances) {
+            $eDailykWh += ($app.watts * $app.hours_per_day) / 1000.0
+        }
+        $eMonthlykWh = $eDailykWh * 30
+        $eMonthlyCost = $eMonthlykWh * 7.5 # Rs 7.5 per kWh
+        $eNormal = $uStore.electricity.normal_usage
+        $ePctDiff = if ($eNormal -gt 0) { [math]::Round((($eDailykWh - $eNormal) / $eNormal) * 100, 1) } else { 0 }
+        
+        $eSeverity = "NORMAL"
+        if ($ePctDiff -gt 50) { $eSeverity = "CRITICAL" }
+        elseif ($ePctDiff -gt 25) { $eSeverity = "HIGH" }
+        elseif ($ePctDiff -gt 10) { $eSeverity = "SLIGHTLY HIGH" }
+
+        # 3. LPG calculations
+        $lpgPct = $uStore.lpg.current_percent
+        $lpgDailyPct = $uStore.lpg.daily_consumption_pct
+        $lpgDaysLeft = if ($lpgDailyPct -gt 0) { [math]::Round($lpgPct / $lpgDailyPct, 0) } else { 99 }
+        $lpgStatus = "SAFE"
+        if ($lpgDaysLeft -le 3 -or $lpgPct -le 15) { $lpgStatus = "CRITICAL" }
+        elseif ($lpgDaysLeft -le 7 -or $lpgPct -le 30) { $lpgStatus = "LOW" }
+
+        # 4. Consumables depletion calculation
+        $activeConsumableAlerts = @()
+        $consumablesNeedingAttention = 0
+        foreach ($c in $uStore.consumables) {
+            $cDaysLeft = if ($c.daily_usage -gt 0) { [math]::Round($c.quantity / $c.daily_usage, 0) } else { 99 }
+            $cStatus = "SUFFICIENT"
+            if ($c.quantity -le $c.min_quantity -or $cDaysLeft -le 2) {
+                $cStatus = "NEED NOW"
+                $consumablesNeedingAttention++
+                $activeConsumableAlerts += @{
+                    resource = "Consumable (" + $c.name + ")";
+                    severity = "HIGH";
+                    problem = $c.name + " is approaching depletion (" + $cDaysLeft + " days left)";
+                    why = "Current quantity (" + $c.quantity + " " + $c.unit + ") is below minimum threshold (" + $c.min_quantity + " " + $c.unit + ")";
+                    action = "Restock " + $c.name + " soon";
+                    estimated_savings = "Prevents emergency buying surge cost"
+                }
+            } elseif ($cDaysLeft -le 5) {
+                $cStatus = "NEED SOON"
+                $consumablesNeedingAttention++
+            }
+            $c["days_left"] = $cDaysLeft
+            $c["status"] = $cStatus
+        }
+
+        # 5. Smart Alert Engine Aggregation
+        $allAlerts = @()
+        if ($wSeverity -eq "HIGH" -or $wSeverity -eq "CRITICAL") {
+            $allAlerts += @{
+                resource = "Water";
+                severity = $wSeverity;
+                problem = "Water usage is " + $wPctDiff + "% higher than normal pattern";
+                why = "Recent spike in daily consumption (" + $wDaily + " L/day vs normal " + $wNormal + " L/day)";
+                action = "Inspect taps, garden valves, and check for hidden pipe leakage";
+                estimated_savings = "Save ~" + [math]::Round(($wDaily - $wNormal) * 30, 0) + " Liters/month (Rs. 250)"
+            }
+        }
+        if ($eSeverity -eq "HIGH" -or $eSeverity -eq "CRITICAL") {
+            $allAlerts += @{
+                resource = "Electricity";
+                severity = $eSeverity;
+                problem = "Electricity consumption increased by " + $ePctDiff + "% compared with normal pattern";
+                why = "High continuous draw from major appliances (" + [math]::Round($eDailykWh, 1) + " kWh/day vs baseline " + $eNormal + " kWh/day)";
+                action = "Adjust AC temperature to 24C and switch off standby water heater";
+                estimated_savings = "Save ~Rs. " + [math]::Round(($eDailykWh - $eNormal) * 30 * 7.5, 0) + "/month"
+            }
+        }
+        if ($lpgStatus -eq "LOW" -or $lpgStatus -eq "CRITICAL") {
+            $allAlerts += @{
+                resource = "LPG";
+                severity = if ($lpgStatus -eq "CRITICAL") { "CRITICAL" } else { "MEDIUM" };
+                problem = "LPG cylinder capacity low (" + $lpgPct + "% remaining)";
+                why = "Based on daily usage rate, estimated depletion in " + $lpgDaysLeft + " days";
+                action = "Book replacement LPG cylinder immediately to avoid cooking disruption";
+                estimated_savings = "Avoid emergency delivery premium"
+            }
+        }
+        $allAlerts += $activeConsumableAlerts
 
         # REST API HANDLERS (/api/*)
         if ($url.StartsWith("/api/")) {
@@ -80,6 +189,105 @@ while ($true) {
 
             if ($url -eq "/api/health") {
                 $jsonString = '{"success":true,"message":"SMART USAGE ALERT backend is running"}'
+            }
+            elseif ($url -eq "/api/water") {
+                if ($method -eq "POST" -and $bodyText -ne "") {
+                    if ($bodyText -match '"daily_usage"\s*:\s*"?(\d+\.?\d*)"?') { $uStore.water.daily_usage = [double]$Matches[1] }
+                    if ($bodyText -match '"household_size"\s*:\s*"?(\d+)"?') { $uStore.water.household_size = [int]$Matches[1] }
+                    if ($bodyText -match '"water_source"\s*:\s*"([^"]*)"') { $uStore.water.water_source = $Matches[1] }
+                    if ($bodyText -match '"category"\s*:\s*"([^"]*)"') { $uStore.water.category = $Matches[1] }
+                    $uStore.has_custom_data = $true
+                }
+                $wDaily = $uStore.water.daily_usage
+                $wNormal = $uStore.water.normal_usage
+                $wWeekly = $wDaily * 7
+                $wMonthly = $wDaily * 30
+                $wPerPerson = if ($uStore.water.household_size -gt 0) { [math]::Round($wDaily / $uStore.water.household_size, 1) } else { $wDaily }
+                $wPctDiff = if ($wNormal -gt 0) { [math]::Round((($wDaily - $wNormal) / $wNormal) * 100, 1) } else { 0 }
+
+                $hasDataStr = if ($uStore.has_custom_data) { "true" } else { "false" }
+                $jsonString = '{"success":true,"has_data":' + $hasDataStr + ',"data":{"daily_usage":' + $wDaily + ',"normal_usage":' + $wNormal + ',"weekly_usage":' + $wWeekly + ',"monthly_usage":' + $wMonthly + ',"per_person_usage":' + $wPerPerson + ',"pct_change":' + $wPctDiff + ',"severity":"' + $wSeverity + '","household_size":' + $uStore.water.household_size + ',"water_source":"' + $uStore.water.water_source + '","category":"' + $uStore.water.category + '"}}'
+            }
+            elseif ($url -eq "/api/electricity") {
+                if ($method -eq "POST" -and $bodyText -ne "") {
+                    $appName = "Appliance"; $appWatts = 500; $appHours = 4; $appDays = 30
+                    if ($bodyText -match '"name"\s*:\s*"([^"]*)"') { $appName = $Matches[1] }
+                    if ($bodyText -match '"watts"\s*:\s*"?(\d+\.?\d*)"?') { $appWatts = [double]$Matches[1] }
+                    if ($bodyText -match '"hours_per_day"\s*:\s*"?(\d+\.?\d*)"?') { $appHours = [double]$Matches[1] }
+                    if ($bodyText -match '"days_per_month"\s*:\s*"?(\d+)"?') { $appDays = [int]$Matches[1] }
+                    
+                    $newApp = @{ id=($uStore.electricity.appliances.Count + 1); name=$appName; watts=$appWatts; hours_per_day=$appHours; days_per_month=$appDays }
+                    $uStore.electricity.appliances += $newApp
+                    $uStore.has_custom_data = $true
+                }
+
+                $eDailykWh = 0.0
+                foreach ($app in $uStore.electricity.appliances) {
+                    $eDailykWh += ($app.watts * $app.hours_per_day) / 1000.0
+                }
+                $eMonthlykWh = $eDailykWh * 30
+                $eMonthlyCost = $eMonthlykWh * 7.5
+                $ePctDiff = if ($uStore.electricity.normal_usage -gt 0) { [math]::Round((($eDailykWh - $uStore.electricity.normal_usage) / $uStore.electricity.normal_usage) * 100, 1) } else { 0 }
+
+                $appJsonList = @()
+                foreach ($app in $uStore.electricity.appliances) {
+                    $appJsonList += '{"id":' + $app.id + ',"name":"' + $app.name + '","watts":' + $app.watts + ',"hours_per_day":' + $app.hours_per_day + ',"days_per_month":' + $app.days_per_month + '}'
+                }
+                $appsJson = "[" + ($appJsonList -join ",") + "]"
+
+                $hasDataStr = if ($uStore.has_custom_data) { "true" } else { "false" }
+                $jsonString = '{"success":true,"has_data":' + $hasDataStr + ',"data":{"daily_kwh":' + [math]::Round($eDailykWh, 2) + ',"monthly_kwh":' + [math]::Round($eMonthlykWh, 2) + ',"monthly_cost_rs":' + [math]::Round($eMonthlyCost, 2) + ',"pct_change":' + $ePctDiff + ',"severity":"' + $eSeverity + '","appliances":' + $appsJson + '}}'
+            }
+            elseif ($url -eq "/api/lpg") {
+                if ($method -eq "POST" -and $bodyText -ne "") {
+                    if ($bodyText -match '"current_percent"\s*:\s*"?(\d+\.?\d*)"?') { $uStore.lpg.current_percent = [double]$Matches[1] }
+                    if ($bodyText -match '"daily_consumption_pct"\s*:\s*"?(\d+\.?\d*)"?') { $uStore.lpg.daily_consumption_pct = [double]$Matches[1] }
+                    $uStore.has_custom_data = $true
+                }
+                $lpgPct = $uStore.lpg.current_percent
+                $lpgDailyPct = $uStore.lpg.daily_consumption_pct
+                $lpgDaysLeft = if ($lpgDailyPct -gt 0) { [math]::Round($lpgPct / $lpgDailyPct, 0) } else { 99 }
+
+                $hasDataStr = if ($uStore.has_custom_data) { "true" } else { "false" }
+                $jsonString = '{"success":true,"has_data":' + $hasDataStr + ',"data":{"current_percent":' + $lpgPct + ',"daily_consumption_pct":' + $lpgDailyPct + ',"days_remaining":' + $lpgDaysLeft + ',"status":"' + $lpgStatus + '"}}'
+            }
+            elseif ($url -eq "/api/consumables") {
+                if ($method -eq "POST" -and $bodyText -ne "") {
+                    $cName = "Consumable"; $cQty = 1.0; $cUnit = "pack"; $cMin = 0.2; $cDaily = 0.05
+                    if ($bodyText -match '"name"\s*:\s*"([^"]*)"') { $cName = $Matches[1] }
+                    if ($bodyText -match '"quantity"\s*:\s*"?(\d+\.?\d*)"?') { $cQty = [double]$Matches[1] }
+                    if ($bodyText -match '"unit"\s*:\s*"([^"]*)"') { $cUnit = $Matches[1] }
+                    if ($bodyText -match '"min_quantity"\s*:\s*"?(\d+\.?\d*)"?') { $cMin = [double]$Matches[1] }
+                    if ($bodyText -match '"daily_usage"\s*:\s*"?(\d+\.?\d*)"?') { $cDaily = [double]$Matches[1] }
+
+                    $newC = @{ id=($uStore.consumables.Count + 1); name=$cName; quantity=$cQty; unit=$cUnit; min_quantity=$cMin; daily_usage=$cDaily }
+                    $uStore.consumables += $newC
+                    $uStore.has_custom_data = $true
+                }
+
+                $cJsonList = @()
+                foreach ($c in $uStore.consumables) {
+                    $cDaysLeft = if ($c.daily_usage -gt 0) { [math]::Round($c.quantity / $c.daily_usage, 0) } else { 99 }
+                    $cStatus = "SUFFICIENT"
+                    if ($c.quantity -le $c.min_quantity -or $cDaysLeft -le 2) { $cStatus = "NEED NOW" }
+                    elseif ($cDaysLeft -le 5) { $cStatus = "NEED SOON" }
+
+                    $cJsonList += '{"id":' + $c.id + ',"name":"' + $c.name + '","quantity":' + $c.quantity + ',"unit":"' + $c.unit + '","min_quantity":' + $c.min_quantity + ',"daily_usage":' + $c.daily_usage + ',"days_remaining":' + $cDaysLeft + ',"status":"' + $cStatus + '"}'
+                }
+                $consumablesJson = "[" + ($cJsonList -join ",") + "]"
+
+                $hasDataStr = if ($uStore.has_custom_data) { "true" } else { "false" }
+                $jsonString = '{"success":true,"has_data":' + $hasDataStr + ',"data":' + $consumablesJson + '}'
+            }
+            elseif ($url -eq "/api/dashboard") {
+                $alertJsonList = @()
+                foreach ($al in $allAlerts) {
+                    $alertJsonList += '{"resource":"' + $al.resource + '","severity":"' + $al.severity + '","problem":"' + $al.problem + '","why":"' + $al.why + '","action":"' + $al.action + '","estimated_savings":"' + $al.estimated_savings + '"}'
+                }
+                $alertsJson = "[" + ($alertJsonList -join ",") + "]"
+
+                $hasDataStr = if ($uStore.has_custom_data) { "true" } else { "false" }
+                $jsonString = '{"success":true,"user_id":"' + $currentAuthUser + '","has_data":' + $hasDataStr + ',"data":{"sustainability_score":88,"water_usage":{"current":' + $wDaily + ',"normal":' + $wNormal + ',"pct_change":' + $wPctDiff + ',"unit":"L/day"},"electricity_usage":{"current":' + [math]::Round($eDailykWh, 2) + ',"normal":' + $eNormal + ',"pct_change":' + $ePctDiff + ',"unit":"kWh/day"},"lpg_level":{"percentage":' + $lpgPct + ',"days_remaining":' + $lpgDaysLeft + ',"status":"' + $lpgStatus + '"},"consumables_needing_attention":' + $consumablesNeedingAttention + ',"active_alerts":' + $alertsJson + ',"savings":{"money_saved":1850,"water_saved":450,"electricity_saved":38,"CO2_avoided":14.5}}}'
             }
             elseif ($url -eq "/api/auth/check-userid") {
                 $checkId = ""

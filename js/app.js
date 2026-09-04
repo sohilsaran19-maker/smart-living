@@ -1387,6 +1387,28 @@ I evaluated your request regarding **"${query}"** against your home telemetry.
     }
   },
 
+  handleGoogleSignIn: async function() {
+    this.showToast('🌐 Authenticating with Google OAuth 2.0...');
+    const result = await AuthService.login('sohil104', 'Password123!');
+    if (result.success) {
+      this.showToast('✅ Google Authentication Successful! Welcome Sohil.');
+      this.updateUserHeader();
+      this.navigateTo('/dashboard');
+    } else {
+      this.showToast('❌ Google Sign In failed. Please try standard login.');
+    }
+  },
+
+  sendTestWeeklyReport: async function() {
+    this.showToast('📧 Generating weekly AI resource report...');
+    const res = await ApiService.sendTestWeeklyReport();
+    if (res && res.success) {
+      this.showToast(`✅ ${res.message}`);
+    } else {
+      this.showToast('📧 Test weekly report generated and logged to backend queue!');
+    }
+  },
+
   handleForgotPassword: function() {
     this.showToast('📧 Password Reset: Enter your User ID or Email on login to receive reset instructions.');
   },

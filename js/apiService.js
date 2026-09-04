@@ -81,11 +81,16 @@ const ApiService = {
     });
   },
 
-  // Seed / Load Demo Data
-  loadDemoData: function() {
+  // Trigger Test Weekly Email Report
+  sendTestWeeklyReport: function() {
+    return this.request('/reports/test-weekly', { method: 'POST' });
+  },
+
+  // Seed / Load Location-Specific Demo Data
+  loadDemoData: function(locationType = 'HOUSEHOLD') {
     return this.request('/inventory', {
       method: 'POST',
-      body: JSON.stringify({ food_name: 'Demo Organic Milk (Loaded)', quantity: 2 })
+      body: JSON.stringify({ food_name: `Demo (${locationType}) Telemetry Loaded`, quantity: 1, location_type: locationType })
     });
   }
 };

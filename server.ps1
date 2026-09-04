@@ -50,14 +50,119 @@ while ($true) {
             if ($url -eq "/api/health") {
                 $jsonString = '{"success":true,"message":"SMART USAGE ALERT backend is running"}'
             }
-            elseif ($url -eq "/api/auth/login") {
-                $jsonString = '{"success":true,"message":"Logged in successfully!","token":"sua_demo_jwt_token_2026","user":{"id":1,"userId":"sohil104","fullName":"Sohil Saran","email":"sohil@smartusage.io","householdSize":4,"location":"Green Oak Eco-District","isOnboarded":true}}'
+            elseif ($url -eq "/api/auth/check-userid") {
+                $checkId = ""
+                if ($rawUrl.Contains("userId=")) {
+                    $checkId = $rawUrl.Substring($rawUrl.IndexOf("userId=") + 7).Split('&')[0]
+                }
+                $isTaken = $false
+                if ($global:registeredUsers) {
+                    foreach ($u in $global:registeredUsers) {
+                        if ($u.userId.ToLower() -eq $checkId.ToLower()) { $isTaken = $true; break }
+                    }
+                }
+                if ($isTaken -or $checkId.ToLower() -eq "sohil104" -or $checkId.ToLower() -eq "alex204") {
+                    $jsonString = '{"success":true,"available":false,"message":"This User ID is already taken. Please choose another one."}'
+                } else {
+                    $jsonString = '{"success":true,"available":true,"message":"User ID available ✓"}'
+                }
             }
             elseif ($url -eq "/api/auth/register") {
-                $jsonString = '{"success":true,"message":"Account created successfully!","token":"sua_demo_jwt_token_2026","user":{"id":2,"userId":"newuser","fullName":"New User","email":"newuser@smartusage.io","householdSize":4,"location":"Green Oak Eco-District","isOnboarded":false}}'
+                $regSuccess = $true
+                $regErr = ""
+                $reqUser = $null
+                
+                if ($bodyText -ne "") {
+                    try {
+                        # Extract parameters from JSON body
+                        $fullName = ""; $userId = ""; $email = ""; $password = ""; $householdSize = 4; $location = "Green Oak Eco-District"
+                        if ($bodyText -match '"fullName"\s*:\s*"([^"]*)"') { $fullName = $Matches[1] }
+                        if ($bodyText -match '"userId"\s*:\s*"([^"]*)"') { $userId = $Matches[1] }
+                        if ($bodyText -match '"email"\s*:\s*"([^"]*)"') { $email = $Matches[1] }
+                        if ($bodyText -match '"password"\s*:\s*"([^"]*)"') { $password = $Matches[1] }
+                        if ($bodyText -match '"householdSize"\s*:\s*"?(\d+)"?') { $householdSize = [int]$Matches[1] }
+                        if ($bodyText -match '"location"\s*:\s*"([^"]*)"') { $location = $Matches[1] }
+
+                        if (-not $global:registeredUsers) { $global:registeredUsers = @() }
+
+                        # Check User ID / Email uniqueness
+                        foreach ($existing in $global:registeredUsers) {
+                            if ($existing.userId.ToLower() -eq $userId.ToLower()) {
+                                $regSuccess = $false
+                                $regErr = "This User ID is already taken. Please choose another one."
+                                break
+                            }
+                            if ($existing.email.ToLower() -eq $email.ToLower()) {
+                                $regSuccess = $false
+                                $regErr = "An account with this email address already exists."
+                                break
+                            }
+                        }
+                        if ($userId.ToLower() -eq "sohil104" -or $userId.ToLower() -eq "alex204") {
+                            $regSuccess = $false
+                            $regErr = "This User ID is already taken. Please choose another one."
+                        }
+
+                        if ($regSuccess) {
+                            # Secure Hashing Simulation (SHA-256)
+                            $hasher = [System.Security.Cryptography.SHA256]::Create()
+                            $hashBytes = $hasher.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($password + "_salt_2026"))
+                            $passwordHash = [System.BitConverter]::ToString($hashBytes).Replace("-", "").ToLower()
+
+                            $newUserObj = @{
+                                id = ($global:registeredUsers.Count + 10);
+                                userId = $userId;
+                                fullName = $fullName;
+                                email = $email;
+                                passwordHash = $passwordHash;
+                                rawPassword = $password; # internal verification
+                                householdSize = $householdSize;
+                                location = $location;
+                                isOnboarded = $false
+                            }
+                            $global:registeredUsers += $newUserObj
+                            $reqUser = $newUserObj
+                        }
+                    } catch {
+                        $regSuccess = $false
+                        $regErr = "Invalid registration data format."
+                    }
+                }
+
+                if ($regSuccess -and $reqUser) {
+                    $jsonString = '{"success":true,"message":"Account created successfully!","token":"sua_jwt_token_' + $reqUser.userId + '","user":{"id":' + $reqUser.id + ',"userId":"' + $reqUser.userId + '","fullName":"' + $reqUser.fullName + '","email":"' + $reqUser.email + '","householdSize":' + $reqUser.householdSize + ',"location":"' + $reqUser.location + '","isOnboarded":false}}'
+                } else {
+                    $jsonString = '{"success":false,"error":"' + $regErr + '","message":"' + $regErr + '"}'
+                }
             }
-            elseif ($url -eq "/api/auth/check-userid") {
-                $jsonString = '{"success":true,"available":true,"message":"User ID available"}'
+            elseif ($url -eq "/api/auth/login") {
+                $loginQuery = ""; $loginPw = ""
+                if ($bodyText -ne "") {
+                    if ($bodyText -match '"query"\s*:\s*"([^"]*)"') { $loginQuery = $Matches[1] }
+                    elseif ($bodyText -match '"userIdOrEmail"\s*:\s*"([^"]*)"') { $loginQuery = $Matches[1] }
+                    if ($bodyText -match '"password"\s*:\s*"([^"]*)"') { $loginPw = $Matches[1] }
+                }
+
+                $matchedUser = $null
+                if ($global:registeredUsers) {
+                    foreach ($u in $global:registeredUsers) {
+                        if (($u.userId.ToLower() -eq $loginQuery.ToLower() -or $u.email.ToLower() -eq $loginQuery.ToLower()) -and $u.rawPassword -eq $loginPw) {
+                            $matchedUser = $u
+                            break
+                        }
+                    }
+                }
+
+                if ($matchedUser) {
+                    $isOnboardedStr = if ($matchedUser.isOnboarded) { "true" } else { "false" }
+                    $jsonString = '{"success":true,"message":"Logged in successfully!","token":"sua_jwt_token_' + $matchedUser.userId + '","user":{"id":' + $matchedUser.id + ',"userId":"' + $matchedUser.userId + '","fullName":"' + $matchedUser.fullName + '","email":"' + $matchedUser.email + '","householdSize":' + $matchedUser.householdSize + ',"location":"' + $matchedUser.location + '","isOnboarded":' + $isOnboardedStr + '}}'
+                } elseif (($loginQuery.ToLower() -eq "sohil104" -or $loginQuery.ToLower() -eq "sohil@smartusage.io") -and $loginPw -eq "Password123!") {
+                    $jsonString = '{"success":true,"message":"Logged in successfully!","token":"sua_demo_jwt_token_2026","user":{"id":1,"userId":"sohil104","fullName":"Sohil Saran","email":"sohil@smartusage.io","householdSize":4,"location":"Green Oak Eco-District","isOnboarded":true}}'
+                } elseif (($loginQuery.ToLower() -eq "alex204" -or $loginQuery.ToLower() -eq "alex@smartusage.io") -and $loginPw -eq "Password123!") {
+                    $jsonString = '{"success":true,"message":"Logged in successfully!","token":"sua_demo_jwt_token_2026","user":{"id":2,"userId":"alex204","fullName":"Alex Rivera","email":"alex@smartusage.io","householdSize":2,"location":"Green Oak Eco-District","isOnboarded":true}}'
+                } else {
+                    $jsonString = '{"success":false,"error":"Invalid User ID or password. Please try again.","message":"Invalid User ID or password. Please try again."}'
+                }
             }
             elseif ($url -eq "/api/auth/me") {
                 $jsonString = '{"success":true,"user":{"id":1,"userId":"sohil104","fullName":"Sohil Saran","email":"sohil@smartusage.io","householdSize":4,"location":"Green Oak Eco-District","isOnboarded":true}}'
